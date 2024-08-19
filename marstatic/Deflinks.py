@@ -25,7 +25,7 @@ class DeflinksPreprocessor(Preprocessor):
 
     @staticmethod
     def color(target: int, overall: int):
-        return colorsys.hsv_to_rgb(target * 1 / overall, 0.5, 0.5)
+        return "#%02x%02x%02x" % colorsys.hsv_to_rgb(target * 1 / overall, 0.5, 0.5)
 
     def run(self, lines: list[str]):
         return [re.sub(self.deflink_regex, self.replace, l) for l in lines]
