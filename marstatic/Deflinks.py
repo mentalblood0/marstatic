@@ -1,50 +1,70 @@
 import colorsys
 import functools
+import itertools
 import re
 from dataclasses import dataclass
 
-from markdown import Markdown
-from markdown.extensions import Extension
-from markdown.preprocessors import Preprocessor
 
+@dataclass(frozen=True, kw_only=True)
+class Def:
+    id: int
+    name: str
+    color: str
 
-class Deflinks(Extension):
-    def extendMarkdown(self, md: Markdown):
-        md.registerExtension(self)
-        md.preprocessors.register(DeflinksPreprocessor(), "deflinks", 100)
+    @functools.cached_property
+    def css_class(self):
+        return f"d{self.id}"
+
+    @functools.cached_property
+    def css(self):
+        return {"class": self.css_class, "color": self.color}
 
 
 @dataclass(frozen=True, kw_only=False)
-class Replacer:
-    deflink_regex = re.compile(r"\*\*([^А-Яа-я]+?)\*\*:*")
+class Defs:
+    regex = re.compile(r"\*\*([^А-Яа-я]+?)\*\*:*")
 
+    by_name: dict[str, Def]
+
+    @classmethod
+    def color(cls, target: int, overall: int):
+        return "#%02x%02x%02x" % tuple(int(255 * i) for i in colorsys.hsv_to_rgb(target / overall, 0.34, 0.78))
+
+    @functools.cached_property
+    def colors_classes(self):
+        return [d.css for d in self.by_name.values()]
+
+    @classmethod
+    def from_defs_names(cls, defs_names: set[str]):
+        return cls(
+            {d: Def(id=i, name=d, color=cls.color(i, len(defs_names))) for i, d in enumerate(sorted(defs_names))}
+        )
+
+    @classmethod
+    def from_lines(cls, lines: list[str]):
+        return cls.from_defs_names(
+            set(m.group(1) for m in itertools.chain.from_iterable(re.finditer(cls.regex, l) for l in lines))
+        )
+
+
+@dataclass(frozen=False, kw_only=False)
+class Replacer:
     lines: list[str]
 
-    def color(self, target: int, overall: int):
-        return "#%02x%02x%02x" % tuple(int(255 * i) for i in colorsys.hsv_to_rgb(target * 1 / overall, 0.34, 0.78))
-
-    @functools.cached_property
-    def defs(self):
-        return set(m.group(1) for m in re.finditer(self.deflink_regex, "\n".join(self.lines)))
-
-    @functools.cached_property
-    def defs_colors(self):
-        return {d: self.color(i, len(self.defs)) for i, d in enumerate(sorted(self.defs))}
+    def __post_init__(self):
+        self.defs = Defs.from_lines(self.lines)
 
     def replace(self, m: re.Match):
-        g = m.group(1)
+        d = self.defs.by_name[m.group(1)]
         if m.group(0).endswith(":"):
-            return f'<span class="def" style="background-color:{self.defs_colors[g]}">&nbsp;**{g}**&nbsp;</span><a name="{g}"></a>:'
+            return f'<span class="def {d.css_class}">&nbsp;**{d.name}**&nbsp;</span><a name="{d.id}"></a>:'
         else:
-            return (
-                f'<span class="link" style="background-color:{self.defs_colors[g]}">&nbsp;**[{g}](#{g})**&nbsp;</span>'
-            )
+            return f'<span class="link {d.css_class}">&nbsp;**[{d.name}](#{d.id})**&nbsp;</span>'
 
     @property
     def result(self):
-        return [re.sub(self.deflink_regex, self.replace, l) for l in self.lines]
+        return "\n".join(re.sub(self.defs.regex, self.replace, l) for l in self.lines)
 
-
-class DeflinksPreprocessor(Preprocessor):
-    def run(self, lines: list[str]):
-        return Replacer(lines).result
+    @classmethod
+    def from_input(cls, input: str):
+        return cls(input.splitlines())
