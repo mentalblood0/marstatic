@@ -9,7 +9,14 @@ from dataclasses import dataclass
 class Def:
     id: int
     name: str
-    color: str
+    shift: float
+    depth: float
+
+    @functools.cached_property
+    def color(self):
+        return "#%02x%02x%02x" % tuple(
+            int(255 * i) for i in colorsys.hsv_to_rgb(self.shift, max(0.15, 0.8 - self.depth), max(0.78, self.depth))
+        )
 
     @functools.cached_property
     def css_class(self):
@@ -24,27 +31,39 @@ class Def:
 class Defs:
     regex = re.compile(r"\*\*([^А-Яа-я]+?)\*\*:*")
 
-    by_name: dict[str, Def]
+    lines: list[str]
 
-    @classmethod
-    def color(cls, target: int, overall: int):
-        return "#%02x%02x%02x" % tuple(int(255 * i) for i in colorsys.hsv_to_rgb(target / overall, 0.34, 0.78))
+    @functools.cached_property
+    def names(self):
+        return sorted(
+            set(m.group(1) for m in itertools.chain.from_iterable(re.finditer(self.regex, l) for l in self.lines))
+        )
+
+    @functools.cached_property
+    def by_name(self):
+        return {d: self[i] for i, d in enumerate(self.names)}
 
     @functools.cached_property
     def colors_classes(self):
         return [d.css for d in self.by_name.values()]
 
-    @classmethod
-    def from_defs_names(cls, defs_names: set[str]):
-        return cls(
-            {d: Def(id=i, name=d, color=cls.color(i, len(defs_names))) for i, d in enumerate(sorted(defs_names))}
-        )
+    @functools.cached_property
+    def depth(self):
+        return max(self.depth_of(n) for n in self.names)
 
-    @classmethod
-    def from_lines(cls, lines: list[str]):
-        return cls.from_defs_names(
-            set(m.group(1) for m in itertools.chain.from_iterable(re.finditer(cls.regex, l) for l in lines))
-        )
+    def depth_of(self, name: str):
+        return name.count("/") + name.count(".")
+
+    def __len__(self):
+        return len(self.names)
+
+    def __getitem__(self, key: int):
+        name = self.names[key]
+        return Def(id=key, name=name, shift=key / len(self), depth=self.depth_of(name) / self.depth)
+
+    def __iter__(self):
+        for i in range(len(self.names)):
+            return self[i]
 
 
 @dataclass(frozen=False, kw_only=False)
@@ -52,7 +71,7 @@ class Replacer:
     lines: list[str]
 
     def __post_init__(self):
-        self.defs = Defs.from_lines(self.lines)
+        self.defs = Defs(self.lines)
 
     def replace(self, m: re.Match):
         d = self.defs.by_name[m.group(1)]
