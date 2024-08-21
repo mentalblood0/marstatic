@@ -35,7 +35,6 @@ class Atom(Element):
     part_regex = re.compile(r"\d*")
     default_regex = re.compile(root_regex.pattern + part_regex.pattern)
 
-    source: str
     regex: re.Pattern[str] = default_regex
 
     @functools.cached_property
@@ -62,7 +61,6 @@ class Atom(Element):
 class Version(Element):
     default_regex = re.compile(f"{Atom.default_regex.pattern}(?:\\.{Atom.default_regex.pattern})+")
 
-    source: str
     regex: re.Pattern[str] = default_regex
 
     @functools.cached_property
@@ -79,7 +77,6 @@ class Answer(Element):
         f"(?:{Atom.default_regex.pattern})|(?:{Version.default_regex.pattern})(?:(?:-|\\.)(?:{Atom.default_regex.pattern})|(?:{Version.default_regex.pattern}))+"
     )
 
-    source: str
     regex: re.Pattern[str] = default_regex
 
     @functools.cached_property
