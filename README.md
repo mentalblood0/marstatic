@@ -10,4 +10,4 @@ number separates part of initial thesis
 
 ### Example
 
-`A2.B-C/D` identifies **answer from proponents of thesis `D`** to **version `C`** of **clarification `B`** of **part `2` of thesis `A`**
+`A2.b-c/D` identifies **answer from proponents of thesis `D`** to **version `c`** of **clarification `b`** of **part `2` of thesis `A`**
