@@ -104,9 +104,13 @@ def parser():
 
 def test_fundamental_atom(parser: Parser):
     assert parser.parse("ABC1234") == Thesis(FundamentalAtom(FundamentalRoot("ABC"), Number(1234)))
+    assert parser.parse("ABC") == Thesis(FundamentalAtom(FundamentalRoot("ABC")))
 
 
 def test_clarification(parser: Parser):
+    assert parser.parse("A2.b1") == Thesis(
+        Clarification([FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"), Number(1))])
+    )
     assert parser.parse("A2.b") == Thesis(
         Clarification([FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"))])
     )
