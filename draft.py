@@ -33,19 +33,27 @@ class Atom:
     number: Number | None = None
 
 
-@dataclass(frozen=True, kw_only=False)
-class Clarification:
-    value: list[Atom | FundamentalAtom | Number]
+@dataclass(init=False)
+class List[T]:
+    value: list[T]
+
+    def __init__(self, *args: T):
+        self.value = list(args)
 
 
-@dataclass(frozen=True, kw_only=False)
-class Version:
-    value: list[Clarification | Atom | FundamentalAtom | Number]
+@dataclass(init=False)
+class Clarification(List[Atom | FundamentalAtom | Number]):
+    ...
 
 
-@dataclass(frozen=True, kw_only=False)
-class Answer:
-    value: list[Version | Clarification | Atom | FundamentalAtom | Number]
+@dataclass(init=False)
+class Version(List[Clarification | Atom | FundamentalAtom | Number]):
+    ...
+
+
+@dataclass(init=False)
+class Answer(List[Version | Clarification | Atom | FundamentalAtom | Number]):
+    ...
 
 
 @dataclass(frozen=True, kw_only=False)
@@ -73,19 +81,19 @@ class Parser:
             (atom | fundamental_atom)
             + clarification_delimiter
             + pp.DelimitedList(atom | number, clarification_delimiter)
-        ).set_parse_action(lambda x: Clarification(x.as_list()))
+        ).set_parse_action(lambda x: Clarification(*x.as_list()))
 
         version_delimiter = pp.Char(self.version_delimiter).suppress()
         version = (
             (clarification | atom | fundamental_atom)
             + version_delimiter
             + pp.DelimitedList(atom | number, version_delimiter)
-        ).set_parse_action(lambda x: Version(x.as_list()))
+        ).set_parse_action(lambda x: Version(*x.as_list()))
 
         answer_delimiter = pp.Char(self.answer_delimiter).suppress()
         answer_element = version | clarification | atom | fundamental_atom
         answer = pp.DelimitedList(answer_element, answer_delimiter, min=2).set_parse_action(
-            lambda x: Answer(x.as_list())
+            lambda x: Answer(*x.as_list())
         )
 
         thesis = (answer | version | clarification | fundamental_atom).set_parse_action(
@@ -110,37 +118,30 @@ def test_fundamental_atom(parser: Parser):
 
 def test_clarification(parser: Parser):
     assert parser.parse("A2.b1") == Thesis(
-        Clarification([FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"), Number(1))])
+        Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"), Number(1)))
     )
     assert parser.parse("A2.b") == Thesis(
-        Clarification([FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"))])
+        Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b")))
     )
     assert parser.parse("A2.b.c") == Thesis(
-        Clarification([FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b")), Atom(Root("c"))])
+        Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b")), Atom(Root("c")))
     )
     assert parser.parse("A2.1.2") == Thesis(
-        Clarification([FundamentalAtom(FundamentalRoot("A"), Number(2)), Number(1), Number(2)])
+        Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Number(1), Number(2))
     )
 
 
 def test_version(parser: Parser):
     assert parser.parse("A2.b-c") == Thesis(
-        Version([Clarification([FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"))]), Atom(Root("c"))])
+        Version(Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"))), Atom(Root("c")))
     )
 
 
 def test_answer(parser: Parser):
     assert parser.parse("A2.b-c/D") == Thesis(
         Answer(
-            [
-                Version(
-                    [
-                        Clarification([FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"))]),
-                        Atom(Root("c")),
-                    ]
-                ),
-                FundamentalAtom(FundamentalRoot("D")),
-            ]
+            Version(Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"))), Atom(Root("c"))),
+            FundamentalAtom(FundamentalRoot("D")),
         )
     )
 
