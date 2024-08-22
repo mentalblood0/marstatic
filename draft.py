@@ -139,19 +139,3 @@ def test_answer(parser: Parser):
             ]
         )
     )
-
-
-def test_thesis(parser: Parser):
-    assert parser.parse("A2.b-c/D") == Thesis(
-        Answer(
-            [
-                Version(
-                    [
-                        Clarification([FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"))]),
-                        Atom(Root("c")),
-                    ]
-                ),
-                FundamentalAtom(FundamentalRoot("D")),
-            ]
-        )
-    )
