@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import pyparsing as pp
 import pytest
+from pytest_benchmark import fixture
 
 
 @dataclass(frozen=True, kw_only=False)
@@ -117,6 +118,9 @@ def test_clarification(parser: Parser):
     assert parser.parse("A2.b.c") == Thesis(
         Clarification([FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b")), Atom(Root("c"))])
     )
+    assert parser.parse("A2.1.2") == Thesis(
+        Clarification([FundamentalAtom(FundamentalRoot("A"), Number(2)), Number(1), Number(2)])
+    )
 
 
 def test_version(parser: Parser):
@@ -139,3 +143,7 @@ def test_answer(parser: Parser):
             ]
         )
     )
+
+
+def test_benchmark_parse(benchmark: fixture.BenchmarkFixture, parser: Parser):
+    benchmark(lambda: parser.parse("A2.b-c/D"))
