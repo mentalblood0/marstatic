@@ -67,28 +67,44 @@ class TsidParser:
     def __post_init__(self):
         b = lambda e: pp.Char(self.opening_bracket).suppress() + e + pp.Char(self.closing_bracket).suppress()
 
-        fundamental_root = pp.Combine(pp.Char(pp.alphas.upper())[1, ...]).set_parse_action(
-            lambda x: FundamentalRoot(str(x[0]))
+        fundamental_root = (
+            pp.Combine(pp.Char(pp.alphas.upper())[1, ...])
+            .set_parse_action(lambda x: FundamentalRoot(str(x[0])))
+            .set_name("fundamental root")
         )
-        root = pp.Combine(pp.Char(pp.alphas.lower())[1, ...]).set_parse_action(lambda x: Root(str(x[0])))
-        number = pp.Combine(pp.Char(pp.nums)[1, ...]).set_parse_action(lambda x: Number(int(str(x[0]))))
-        fundamental_atom = (fundamental_root + pp.Opt(number)).set_parse_action(lambda x: FundamentalAtom(*x.as_list()))
-        atom = (root + pp.Opt(number)).set_parse_action(lambda x: Atom(*x.as_list()))
+        root = (
+            pp.Combine(pp.Char(pp.alphas.lower())[1, ...]).set_parse_action(lambda x: Root(str(x[0]))).set_name("root")
+        )
+        number = (
+            pp.Combine(pp.Char(pp.nums)[1, ...]).set_parse_action(lambda x: Number(int(str(x[0])))).set_name("number")
+        )
+        fundamental_atom = (
+            (fundamental_root + pp.Opt(number))
+            .set_parse_action(lambda x: FundamentalAtom(*x.as_list()))
+            .set_name("fundamental atom")
+        )
+        atom = (root + pp.Opt(number)).set_parse_action(lambda x: Atom(*x.as_list())).set_name("atom")
 
         clarification_delimiter = pp.Char(self.clarification_delimiter).suppress()
-        clarification = pp.Forward()
+        clarification = pp.Forward().set_name("clarification")
 
         version_delimiter = pp.Char(self.version_delimiter).suppress()
         version = (
-            (clarification | atom | fundamental_atom)
-            + version_delimiter
-            + pp.DelimitedList(atom | number, version_delimiter)
-        ).set_parse_action(lambda x: Version(*x.as_list()))
+            (
+                (clarification | atom | fundamental_atom)
+                + version_delimiter
+                + pp.DelimitedList(atom | number, version_delimiter)
+            )
+            .set_parse_action(lambda x: Version(*x.as_list()))
+            .set_name("version")
+        )
 
         answer_delimiter = pp.Char(self.answer_delimiter).suppress()
         answer_element = b(version) | b(clarification) | atom | fundamental_atom
-        answer = pp.DelimitedList(answer_element, answer_delimiter, min=2).set_parse_action(
-            lambda x: Answer(*x.as_list())
+        answer = (
+            pp.DelimitedList(answer_element, answer_delimiter, min=2)
+            .set_parse_action(lambda x: Answer(*x.as_list()))
+            .set_name("answer")
         )
 
         clarification <<= (
@@ -97,8 +113,10 @@ class TsidParser:
             + pp.DelimitedList(atom | number, clarification_delimiter)
         ).set_parse_action(lambda x: Clarification(*x.as_list()))
 
-        self.thesis = (answer | version | clarification | fundamental_atom).set_parse_action(
-            lambda x: Thesis(x.as_list()[0])
+        self.thesis = (
+            (answer | version | clarification | fundamental_atom)
+            .set_parse_action(lambda x: Thesis(x.as_list()[0]))
+            .set_name("thesis")
         )
 
     def parse(self, s: str):
