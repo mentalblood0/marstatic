@@ -24,45 +24,45 @@ def parser():
 
 
 def test_fundamental_atom(parser: TsidParser):
-    assert parser.parse("(ABC1234)") == Thesis(FundamentalAtom(FundamentalRoot("ABC"), Number(1234)))
+    assert parser.parse("ABC1234") == Thesis(FundamentalAtom(FundamentalRoot("ABC"), Number(1234)))
     assert parser.parse("ABC") == Thesis(FundamentalAtom(FundamentalRoot("ABC")))
 
 
 def test_clarification(parser: TsidParser):
-    assert parser.parse("((A2).(b1))") == Thesis(
+    assert parser.parse("(A2.b1)") == Thesis(
         Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"), Number(1)))
     )
-    assert parser.parse("((A2).b)") == Thesis(
+    assert parser.parse("(A2.b)") == Thesis(
         Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b")))
     )
-    assert parser.parse("((A2).b.c)") == Thesis(
+    assert parser.parse("(A2.b.c)") == Thesis(
         Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b")), Atom(Root("c")))
     )
-    assert parser.parse("((A2).1.2)") == Thesis(
+    assert parser.parse("(A2.1.2)") == Thesis(
         Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Number(1), Number(2))
     )
 
 
 def test_version(parser: TsidParser):
-    assert parser.parse("(((A2).b)-c)") == Thesis(
+    assert parser.parse("((A2.b)-c)") == Thesis(
         Version(Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"))), Atom(Root("c")))
     )
 
 
 def test_answer(parser: TsidParser):
-    assert parser.parse("((((A2).b)-c)/D)") == Thesis(
+    assert parser.parse("(((A2.b)-c)/D)") == Thesis(
         Answer(
             Version(Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"))), Atom(Root("c"))),
             FundamentalAtom(FundamentalRoot("D")),
         )
     )
-    assert parser.parse("((((A2).b)-c)/(D.1))") == Thesis(
+    assert parser.parse("(((A2.b)-c)/(D.1))") == Thesis(
         Answer(
             Version(Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"))), Atom(Root("c"))),
             Clarification(FundamentalAtom(FundamentalRoot("D")), Number(1)),
         )
     )
-    assert parser.parse("(((((A2).b)-c)/D).1)") == Thesis(
+    assert parser.parse("((((A2.b)-c)/D).1)") == Thesis(
         Clarification(
             Answer(
                 Version(

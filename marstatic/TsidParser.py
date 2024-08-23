@@ -72,11 +72,8 @@ class TsidParser:
         )
         root = pp.Combine(pp.Char(pp.alphas.lower())[1, ...]).set_parse_action(lambda x: Root(str(x[0])))
         number = pp.Combine(pp.Char(pp.nums)[1, ...]).set_parse_action(lambda x: Number(int(str(x[0]))))
-        fundamental_atom = (b(fundamental_root + number) | fundamental_root).set_parse_action(
-            lambda x: FundamentalAtom(*x.as_list())
-        )
-
-        atom = (b(root + number) | root).set_parse_action(lambda x: Atom(*x.as_list()))
+        fundamental_atom = (fundamental_root + pp.Opt(number)).set_parse_action(lambda x: FundamentalAtom(*x.as_list()))
+        atom = (root + pp.Opt(number)).set_parse_action(lambda x: Atom(*x.as_list()))
 
         clarification_delimiter = pp.Char(self.clarification_delimiter).suppress()
         clarification = pp.Forward()
