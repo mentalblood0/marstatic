@@ -26,24 +26,24 @@ Colors for atoms are assigned by:
 
 2. Sorting them alphabetically
 
-3. Assigning (1 / N * n, S, V) color in HSV to n-th of total of N of them, where S and V are constant
+3. Assigning `(1 / N * n, S, V)` color in HSV color space to `n`-th of total of `N` of them, where `S` and `V` are constant
 
 #### Atoms with numbers has the same color as without them:
 
-A, A1, A32 has the same color
+`A`, `A1`, `A32` has the same color
 
 #### Clarification decreases saturation:
 
-- in A.b, b has the same color as A except it is less saturated,
+- in `A.b`, `b` has the same color as `A` except it is less saturated,
 
-- in A.b.c c has the same color as b except it is less saturated
+- in `A.b.c`, `c` has the same color as b except it is less saturated
 
 #### Version introduces separate color space:
 
-- in A-b, b has own color which might coincide with color of B, for example
+- in `A-b`, `b` has own color which might coincide with color of `B`, for example
 
-- if there are A, K, L, F, A-b, A-c, A-d, then colors of b, c and d got the same way as colors of A, K, L, F
+- if there are `A`, `K`, `L`, `F`, `A-b`, `A-c`, `A-d`, then colors of `b`, `c` and `d` got the same way as colors of `A`, `K`, `L`, `F`
 
 #### Answer has no affect on color except rules above:
 
-in A/B color of B is the same as in B.1.2-c for example
+in `A/B` color of `B` is the same as in `B.1.2-c` for example
