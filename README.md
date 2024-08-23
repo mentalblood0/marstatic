@@ -36,7 +36,7 @@ Colors for atoms are assigned by:
 
 - in `A.b`, `b` has the same color as `A` except it is less saturated,
 
-- in `A.b.c`, `c` has the same color as b except it is less saturated
+- in `A.b.c`, `c` has the same color as `b` except it is less saturated
 
 #### Version introduces separate color space:
 

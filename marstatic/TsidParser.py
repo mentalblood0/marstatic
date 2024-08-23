@@ -31,22 +31,25 @@ class Atom:
 
 
 @dataclass(init=False)
-class List[T]:
-    value: list[T]
+class Tuple[T]:
+    value: tuple[T, ...]
 
     def __init__(self, *args: T):
-        self.value = list(args)
+        self.value = tuple(args)
+
+    def __hash__(self):
+        return hash(self.value)
 
 
-class Clarification(List[Atom | FundamentalAtom | Number]):
+class Clarification(Tuple[Atom | FundamentalAtom | Number]):
     ...
 
 
-class Version(List[Clarification | Atom | FundamentalAtom | Number]):
+class Version(Tuple[Clarification | Atom | FundamentalAtom | Number]):
     ...
 
 
-class Answer(List[Version | Clarification | Atom | FundamentalAtom | Number]):
+class Answer(Tuple[Version | Clarification | Atom | FundamentalAtom | Number]):
     ...
 
 
@@ -90,10 +93,9 @@ class TsidParser:
             lambda x: Answer(*x.as_list())
         )
 
-        thesis = (answer | version | clarification | fundamental_atom).set_parse_action(
+        self.thesis = (answer | version | clarification | fundamental_atom).set_parse_action(
             lambda x: Thesis(x.as_list()[0])
         )
-        self.parser = thesis
 
     def parse(self, s: str):
-        return self.parser.parse_string(s)[0]
+        return self.thesis.parse_string(s)[0]
