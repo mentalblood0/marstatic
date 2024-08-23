@@ -41,17 +41,14 @@ class List[T]:
         self.value = list(args)
 
 
-@dataclass(init=False)
 class Clarification(List[Atom | FundamentalAtom | Number]):
     ...
 
 
-@dataclass(init=False)
 class Version(List[Clarification | Atom | FundamentalAtom | Number]):
     ...
 
 
-@dataclass(init=False)
 class Answer(List[Version | Clarification | Atom | FundamentalAtom | Number]):
     ...
 
