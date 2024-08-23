@@ -65,7 +65,7 @@ class TsidParser:
     closing_bracket: str = ")"
 
     def __post_init__(self):
-        b = lambda e: pp.Char("(").suppress() + e + pp.Char(")").suppress()
+        b = lambda e: pp.Char(self.opening_bracket).suppress() + e + pp.Char(self.closing_bracket).suppress()
 
         fundamental_root = pp.Combine(pp.Char(pp.alphas.upper())[1, ...]).set_parse_action(
             lambda x: FundamentalRoot(str(x[0]))
@@ -79,26 +79,22 @@ class TsidParser:
         clarification = pp.Forward()
 
         version_delimiter = pp.Char(self.version_delimiter).suppress()
-        version = b(
-            (
-                (clarification | atom | fundamental_atom)
-                + version_delimiter
-                + pp.DelimitedList(atom | number, version_delimiter)
-            )
+        version = (
+            (clarification | atom | fundamental_atom)
+            + version_delimiter
+            + pp.DelimitedList(atom | number, version_delimiter)
         ).set_parse_action(lambda x: Version(*x.as_list()))
 
         answer_delimiter = pp.Char(self.answer_delimiter).suppress()
-        answer_element = version | clarification | atom | fundamental_atom
-        answer = b(pp.DelimitedList(answer_element, answer_delimiter, min=2)).set_parse_action(
+        answer_element = b(version) | b(clarification) | atom | fundamental_atom
+        answer = pp.DelimitedList(answer_element, answer_delimiter, min=2).set_parse_action(
             lambda x: Answer(*x.as_list())
         )
 
         clarification <<= (
-            b(
-                (answer | atom | fundamental_atom)
-                + clarification_delimiter
-                + pp.DelimitedList(atom | number, clarification_delimiter)
-            )
+            (b(answer) | atom | fundamental_atom)
+            + clarification_delimiter
+            + pp.DelimitedList(atom | number, clarification_delimiter)
         ).set_parse_action(lambda x: Clarification(*x.as_list()))
 
         self.thesis = (answer | version | clarification | fundamental_atom).set_parse_action(
@@ -106,4 +102,4 @@ class TsidParser:
         )
 
     def parse(self, s: str):
-        return self.thesis.parse_string(s)[0]
+        return self.thesis.parse_string(s, parse_all=True)[0]
