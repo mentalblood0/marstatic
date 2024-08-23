@@ -60,8 +60,8 @@ How should `A0/R-r` be read?
 
 #### Part of answer from version or part of version which is the answer?
 
-How should `R-r1` in `A3.1/R-r1` be read?
+How should `A/R1` be read?
 
-- `R-(r1)`, i.e. version `r1` of thesis `R`
+- `A/(R1)`, i.e. answer of proponent of part `1` of thesis `R` to thesis `A`
 
-- `(R-r)1`, i.e. part `1` of version `r` of thesis `R`
+- `(A/R)1`, i.e. part 1 of answer of proponent of thesis `R` to thesis `A`
