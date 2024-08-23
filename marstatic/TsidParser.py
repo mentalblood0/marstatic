@@ -1,9 +1,6 @@
-import functools
 from dataclasses import dataclass
 
 import pyparsing as pp
-import pytest
-from pytest_benchmark import fixture
 
 
 @dataclass(frozen=True, kw_only=False)
@@ -59,7 +56,7 @@ class Thesis:
 
 
 @dataclass(frozen=False, kw_only=True)
-class Parser:
+class TsidParser:
     clarification_delimiter: str = "."
     version_delimiter: str = "-"
     answer_delimiter: str = "/"
@@ -100,48 +97,3 @@ class Parser:
 
     def parse(self, s: str):
         return self.parser.parse_string(s)[0]
-
-
-@pytest.fixture
-@functools.cache
-def parser():
-    return Parser()
-
-
-def test_fundamental_atom(parser: Parser):
-    assert parser.parse("ABC1234") == Thesis(FundamentalAtom(FundamentalRoot("ABC"), Number(1234)))
-    assert parser.parse("ABC") == Thesis(FundamentalAtom(FundamentalRoot("ABC")))
-
-
-def test_clarification(parser: Parser):
-    assert parser.parse("A2.b1") == Thesis(
-        Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"), Number(1)))
-    )
-    assert parser.parse("A2.b") == Thesis(
-        Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b")))
-    )
-    assert parser.parse("A2.b.c") == Thesis(
-        Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b")), Atom(Root("c")))
-    )
-    assert parser.parse("A2.1.2") == Thesis(
-        Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Number(1), Number(2))
-    )
-
-
-def test_version(parser: Parser):
-    assert parser.parse("A2.b-c") == Thesis(
-        Version(Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"))), Atom(Root("c")))
-    )
-
-
-def test_answer(parser: Parser):
-    assert parser.parse("A2.b-c/D") == Thesis(
-        Answer(
-            Version(Clarification(FundamentalAtom(FundamentalRoot("A"), Number(2)), Atom(Root("b"))), Atom(Root("c"))),
-            FundamentalAtom(FundamentalRoot("D")),
-        )
-    )
-
-
-def test_benchmark_parse(benchmark: fixture.BenchmarkFixture, parser: Parser):
-    benchmark(lambda: parser.parse("A2.b-c/D"))
