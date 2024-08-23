@@ -28,9 +28,9 @@ Colors for atoms are assigned by:
 
 3. Assigning `(1 / N * n, S, V)` color in HSV color space to `n`-th of total of `N` of them, where `S` and `V` are constant
 
-#### Atoms with numbers has the same color as without them:
+#### Atoms with numbers have the same color as without them:
 
-`A`, `A1`, `A32` has the same color
+`A`, `A1`, `A32` have the same color
 
 #### Clarification decreases saturation:
 
