@@ -115,7 +115,7 @@ class Colorer:
         return cls.from_lines(text.splitlines())
 
 
-c = Colorer.from_text(pathlib.Path("../notes/relativism.md").read_text(encoding="utf8"))
+c = Colorer.from_text(pathlib.Path("example_source.md").read_text(encoding="utf8"))
 print(c.fundamental_roots)
 print(c.versions)
 print(c.colorspace.color("A"))
