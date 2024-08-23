@@ -58,7 +58,7 @@ How should `A0/R-r` be read?
 
 - `(A0/R)-r`, i.e. version `r` of answer of proponent of thesis `R` to thesis `A0`
 
-#### Part of theis from which is the answer of part of answer?
+#### Part of thesis from which is the answer of part of answer?
 
 How should `A/R1` be read?
 
