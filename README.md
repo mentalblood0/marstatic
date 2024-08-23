@@ -47,21 +47,3 @@ Colors for atoms are assigned by:
 #### Answer has no affect on color except rules above:
 
 in `A/B` color of `B` is the same as in `B.1.2-c` for example
-
-### Problems
-
-#### Answer from version or version of answer?
-
-How should `A0/R-r` be read?
-
-- `A0/(R-r)`, i.e. answer of proponent of version `r` of thesis `R` to thesis `A0`
-
-- `(A0/R)-r`, i.e. version `r` of answer of proponent of thesis `R` to thesis `A0`
-
-#### Part of thesis from which is the answer of part of answer?
-
-How should `A/R1` be read?
-
-- `A/(R1)`, i.e. answer of proponent of part `1` of thesis `R` to thesis `A`
-
-- `(A/R)1`, i.e. part 1 of answer of proponent of thesis `R` to thesis `A`

@@ -1,3 +1,4 @@
+import typing
 from dataclasses import dataclass
 
 import pyparsing as pp
@@ -41,16 +42,13 @@ class Tuple[T]:
         return hash(self.value)
 
 
-class Clarification(Tuple[Atom | FundamentalAtom | Number]):
-    ...
+class Clarification(Tuple[typing.Union["Answer", Atom, FundamentalAtom, Number]]): ...
 
 
-class Version(Tuple[Clarification | Atom | FundamentalAtom | Number]):
-    ...
+class Version(Tuple[Clarification | Atom | FundamentalAtom | Number]): ...
 
 
-class Answer(Tuple[Version | Clarification | Atom | FundamentalAtom | Number]):
-    ...
+class Answer(Tuple[Version | Clarification | Atom | FundamentalAtom | Number]): ...
 
 
 @dataclass(frozen=True, kw_only=False)
@@ -63,35 +61,48 @@ class TsidParser:
     clarification_delimiter: str = "."
     version_delimiter: str = "-"
     answer_delimiter: str = "/"
+    opening_bracket: str = "("
+    closing_bracket: str = ")"
 
     def __post_init__(self):
+        b = lambda e: pp.Char("(").suppress() + e + pp.Char(")").suppress()
+
         fundamental_root = pp.Combine(pp.Char(pp.alphas.upper())[1, ...]).set_parse_action(
             lambda x: FundamentalRoot(str(x[0]))
         )
         root = pp.Combine(pp.Char(pp.alphas.lower())[1, ...]).set_parse_action(lambda x: Root(str(x[0])))
         number = pp.Combine(pp.Char(pp.nums)[1, ...]).set_parse_action(lambda x: Number(int(str(x[0]))))
-        fundamental_atom = (fundamental_root + pp.Opt(number)).set_parse_action(lambda x: FundamentalAtom(*x.as_list()))
-        atom = (root + pp.Opt(number)).set_parse_action(lambda x: Atom(*x.as_list()))
+        fundamental_atom = (b(fundamental_root + number) | fundamental_root).set_parse_action(
+            lambda x: FundamentalAtom(*x.as_list())
+        )
+
+        atom = (b(root + number) | root).set_parse_action(lambda x: Atom(*x.as_list()))
 
         clarification_delimiter = pp.Char(self.clarification_delimiter).suppress()
-        clarification = (
-            (atom | fundamental_atom)
-            + clarification_delimiter
-            + pp.DelimitedList(atom | number, clarification_delimiter)
-        ).set_parse_action(lambda x: Clarification(*x.as_list()))
+        clarification = pp.Forward()
 
         version_delimiter = pp.Char(self.version_delimiter).suppress()
-        version = (
-            (clarification | atom | fundamental_atom)
-            + version_delimiter
-            + pp.DelimitedList(atom | number, version_delimiter)
+        version = b(
+            (
+                (clarification | atom | fundamental_atom)
+                + version_delimiter
+                + pp.DelimitedList(atom | number, version_delimiter)
+            )
         ).set_parse_action(lambda x: Version(*x.as_list()))
 
         answer_delimiter = pp.Char(self.answer_delimiter).suppress()
         answer_element = version | clarification | atom | fundamental_atom
-        answer = pp.DelimitedList(answer_element, answer_delimiter, min=2).set_parse_action(
+        answer = b(pp.DelimitedList(answer_element, answer_delimiter, min=2)).set_parse_action(
             lambda x: Answer(*x.as_list())
         )
+
+        clarification <<= (
+            b(
+                (answer | atom | fundamental_atom)
+                + clarification_delimiter
+                + pp.DelimitedList(atom | number, clarification_delimiter)
+            )
+        ).set_parse_action(lambda x: Clarification(*x.as_list()))
 
         self.thesis = (answer | version | clarification | fundamental_atom).set_parse_action(
             lambda x: Thesis(x.as_list()[0])
