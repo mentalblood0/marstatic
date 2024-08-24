@@ -63,6 +63,11 @@ class Tsid:
     def versions(self):
         return versions(self.parsed)
 
+    def __lt__(self, o: object):
+        if isinstance(o, Tsid):
+            return self.value < o.value
+        raise ValueError(f"{self} < {o}")
+
 
 @dataclass(frozen=True, kw_only=False)
 class Colorspace:
@@ -116,6 +121,8 @@ class Colorer:
 
 
 c = Colorer.from_text(pathlib.Path("example_source.md").read_text(encoding="utf8"))
+# for t in sorted(c.tsids):
+#     print(f'("{t.value}", ),')
 print(c.fundamental_roots)
-print(c.versions)
-print(c.colorspace.color("A"))
+# print(c.versions)
+# print(c.colorspace.color("A"))

@@ -2,6 +2,7 @@ import typing
 from dataclasses import dataclass
 
 import pyparsing as pp
+import pyparsing.exceptions
 
 
 @dataclass(frozen=True, kw_only=False)
@@ -160,4 +161,7 @@ class TsidParser:
         )
 
     def parse(self, s: str):
-        return self.thesis.parse_string(s, parse_all=True)[0]
+        try:
+            return self.thesis.parse_string(s, parse_all=True)[0]
+        except pyparsing.exceptions.ParseException as e:
+            raise Exception(f'Parsing "{s}": {e}')
