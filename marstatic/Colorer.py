@@ -208,7 +208,7 @@ class Colorer:
         if isinstance(o, T.R | T.A):
             result = [(o.loc, self.colorspace().color(o))]
         elif isinstance(o, T.V):
-            result = self.colored(o.value[0]) + [(o.value[-1].loc, self.colorspace(o.value[0]).color(o))]
+            result = self.colored(o.first) + [(o.other[-1].loc, self.colorspace(o.first).color(o))]
         elif isinstance(o, T.C):
             first = self.colored(o.first)
             result = first + [(c.loc, first[-1][1].saturated(0.57 ** (i + 1))) for i, c in enumerate(o.other)]
@@ -217,13 +217,6 @@ class Colorer:
             for a in o.other:
                 result += self.colored(a)
         return self.flatten(result)
-
-    @functools.cached_property
-    def tsid_by_name(self):
-        return {t.value: t for t in self.tsids}
-
-    def __getitem__(self, key: str):
-        return self.tsid_by_name[key]
 
     @classmethod
     def from_lines(cls, lines: list[str]):

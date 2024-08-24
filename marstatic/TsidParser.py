@@ -9,7 +9,7 @@ import pyparsing.exceptions
 @dataclass(frozen=True, kw_only=False)
 class Number:
     value: int
-    loc: tuple[int, int] | None = None
+    loc: tuple[int, int] | None = field(default=None, compare=False)
 
     def __repr__(self):
         return str(self.value)
@@ -18,7 +18,7 @@ class Number:
 @dataclass(frozen=True, kw_only=False)
 class FundamentalRoot:
     value: str
-    loc: tuple[int, int] | None = None
+    loc: tuple[int, int] | None = field(default=None, compare=False)
 
     def __repr__(self):
         return self.value
@@ -27,7 +27,7 @@ class FundamentalRoot:
 @dataclass(frozen=True, kw_only=False)
 class Root:
     value: str
-    loc: tuple[int, int] | None = None
+    loc: tuple[int, int] | None = field(default=None, compare=False)
 
     def __repr__(self):
         return self.value
@@ -37,7 +37,7 @@ class Root:
 class FundamentalAtom:
     root: FundamentalRoot
     number: Number | None = None
-    loc: tuple[int, int] | None = None
+    loc: tuple[int, int] | None = field(default=None, compare=False)
 
     def __repr__(self):
         if self.number is None:

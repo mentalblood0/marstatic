@@ -19,7 +19,7 @@ c = Colorer.from_text(pathlib.Path("example_source.md").read_text(encoding="utf8
 body = markdown.markdown(c.colored())
 
 templates = {p.stem: ruiner.Template(p.read_text()) for p in (pathlib.Path(__file__).parent / "templates").iterdir()}
-parameters = {"header": str(args.header), "body": body}
+parameters: ruiner.TemplateParameters = {"header": str(args.header), "body": body}
 
 result = templates["Page"].rendered(parameters, templates=templates)
 args.output.write_text(result, encoding="utf8")
