@@ -79,7 +79,9 @@ class Colorspace:
 
 @dataclass(frozen=True, kw_only=False)
 class VersionColorspace:
-    first: T.V.First | T.V
+    First = T.V.First | T.V
+
+    first: First
     members: set[T.V.Other]
 
     def __len__(self):
@@ -111,6 +113,9 @@ class Colorer:
     def colorspace(self):
         return Colorspace(self.fundamental_roots)
 
+    def version_colorspace(self, first: VersionColorspace.First):
+        return VersionColorspace(first, {o for v in self.versions if v.first == first for o in v.other})
+
     @functools.cached_property
     def tsid_by_name(self):
         return {t.value: t for t in self.tsids}
@@ -134,4 +139,5 @@ c = Colorer.from_text(pathlib.Path("example_source.md").read_text(encoding="utf8
 #     print(f'("{t.value}", ),')
 print(c.fundamental_roots)
 print(c.versions)
-print(c.colorspace.color(T.A(T.R("R"), T.N(1))))
+print(c.colorspace.color(tsid_parser.parse("R1").value))
+print(c.version_colorspace(tsid_parser.parse("R").value).color(tsid_parser.parse("R-a").value))
