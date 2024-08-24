@@ -144,7 +144,7 @@ class Colored:
             return f"background: {self.segments[0].color.css}"
         return (
             "background: linear-gradient(90deg, "
-            + ", ".join(f"{s.color.css} {(s.start + 2) / len(self) * 100}%" for s in self.segments)
+            + ", ".join(f"{s.color.css} {(s.start + 1.5) / len(self) * 100}%" for s in self.segments)
             + ");"
         )
 
