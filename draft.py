@@ -5,17 +5,7 @@ import pathlib
 import re
 from dataclasses import dataclass
 
-from marstatic.TsidParser import (
-    Answer,
-    Atom,
-    Clarification,
-    FundamentalAtom,
-    FundamentalRoot,
-    Number,
-    Thesis,
-    TsidParser,
-    Version,
-)
+from marstatic.TsidParser import T, TsidParser
 
 tsid_parser = TsidParser()
 
@@ -24,22 +14,22 @@ def color(n: int, N: int):
     return tuple(int(255 * i) for i in colorsys.hsv_to_rgb(n / N, 0.35, 0.78))
 
 
-def fundamental_roots(o: Thesis | Answer | Version | Clarification | Atom | FundamentalAtom | Number):
-    if isinstance(o, Thesis):
+def fundamental_roots(o: T | T.Ans | T.V | T.C | T.a | T.A | T.N):
+    if isinstance(o, T):
         return fundamental_roots(o.value)
-    if isinstance(o, Answer | Version | Clarification):
+    if isinstance(o, T.Ans | T.V | T.C):
         return {r for pattern in o.value for r in fundamental_roots(pattern)}
-    if isinstance(o, FundamentalAtom):
+    if isinstance(o, T.A):
         return {o.root}
     return set()
 
 
-def versions(o: Thesis | Answer | Version | Clarification | Atom | FundamentalAtom | Number):
-    if isinstance(o, Thesis):
+def versions(o: T | T.Ans | T.V | T.C | T.a | T.A | T.N):
+    if isinstance(o, T):
         return versions(o.value)
-    if isinstance(o, Answer):
+    if isinstance(o, T.Ans):
         return {r for pattern in o.value for r in versions(pattern)}
-    if isinstance(o, Version):
+    if isinstance(o, T.V):
         return {o}
     return set()
 
@@ -51,7 +41,7 @@ class Tsid:
     @functools.cached_property
     def parsed(self):
         result = tsid_parser.parse(self.value)
-        if not isinstance(result, Thesis):
+        if not isinstance(result, T):
             raise ValueError
         return result
 
@@ -71,7 +61,7 @@ class Tsid:
 
 @dataclass(frozen=True, kw_only=False)
 class Colorspace:
-    members: set[FundamentalRoot]
+    members: set[T.R]
 
     def __len__(self):
         return len(self.members)
@@ -80,8 +70,11 @@ class Colorspace:
     def number_by_value(self):
         return {r.value: i for i, r in enumerate(sorted(self.members, key=lambda r: r.value))}
 
-    def color(self, root_value: str):
-        return color(self.number_by_value[root_value], len(self))
+    def color(self, o: T.R | T.A):
+        if isinstance(o, T.R):
+            return color(self.number_by_value[o.value], len(self))
+        if isinstance(o, T.A):
+            return color(self.number_by_value[o.root.value], len(self))
 
 
 @dataclass(frozen=True, kw_only=False)
@@ -124,5 +117,5 @@ c = Colorer.from_text(pathlib.Path("example_source.md").read_text(encoding="utf8
 # for t in sorted(c.tsids):
 #     print(f'("{t.value}", ),')
 print(c.fundamental_roots)
-# print(c.versions)
-# print(c.colorspace.color("A"))
+print(c.versions)
+print(c.colorspace.color(T.A(T.R("R"), T.N(1))))

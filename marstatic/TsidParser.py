@@ -40,17 +40,6 @@ class FundamentalAtom:
         return f"({self.root}, {self.number})"
 
 
-@dataclass(frozen=True, kw_only=False)
-class Atom:
-    root: Root
-    number: Number | None = None
-
-    def __repr__(self):
-        if self.number is None:
-            return f"({self.root})"
-        return f"({self.root}, {self.number})"
-
-
 @dataclass(init=False)
 class Tuple[T]:
     value: tuple[T, ...]
@@ -62,17 +51,17 @@ class Tuple[T]:
         return hash(self.value)
 
 
-class Clarification(Tuple[typing.Union["Version", "Answer", Atom, FundamentalAtom, Number]]):
+class Clarification(Tuple[typing.Union["Version", "Answer", Root, FundamentalAtom, Number]]):
     def __repr__(self):
         return f"C{self.value}"
 
 
-class Version(Tuple[Clarification | Atom | FundamentalAtom | Number]):
+class Version(Tuple[Clarification | Root | FundamentalAtom | Number]):
     def __repr__(self):
         return f"V{self.value}"
 
 
-class Answer(Tuple[Version | Clarification | Atom | FundamentalAtom | Number]):
+class Answer(Tuple[Version | Clarification | Root | FundamentalAtom | Number]):
     def __repr__(self):
         return f"A{self.value}"
 
@@ -82,13 +71,13 @@ class Thesis:
     Ans = Answer
     V = Version
     C = Clarification
-    a = Atom
+    a = Root
     A = FundamentalAtom
     r = Root
     R = FundamentalRoot
     N = Number
 
-    value: Answer | Version | Clarification | Atom | FundamentalAtom | Number
+    value: Answer | Version | Clarification | Root | FundamentalAtom | Number
 
     def __repr__(self):
         return f"T{self.value}"
@@ -124,7 +113,6 @@ class TsidParser:
             .set_parse_action(lambda x: FundamentalAtom(*x.as_list()))
             .set_name("fundamental atom")
         )
-        atom = (root + pp.Opt(number)).set_parse_action(lambda x: Atom(*x.as_list())).set_name("atom")
 
         clarification_delimiter = pp.Char(self.clarification_delimiter).suppress()
         clarification = pp.Forward().set_name("clarification")
@@ -132,16 +120,16 @@ class TsidParser:
         version_delimiter = pp.Char(self.version_delimiter).suppress()
         version = (
             (
-                (clarification | atom | fundamental_atom)
+                (clarification | root | fundamental_atom)
                 + version_delimiter
-                + pp.DelimitedList(atom | number, version_delimiter)
+                + pp.DelimitedList(root | number, version_delimiter)
             )
             .set_parse_action(lambda x: Version(*x.as_list()))
             .set_name("version")
         )
 
         answer_delimiter = pp.Char(self.answer_delimiter).suppress()
-        answer_element = b(version) | b(clarification) | atom | fundamental_atom
+        answer_element = b(version) | b(clarification) | root | fundamental_atom
         answer = (
             pp.DelimitedList(answer_element, answer_delimiter, min=2)
             .set_parse_action(lambda x: Answer(*x.as_list()))
@@ -149,9 +137,9 @@ class TsidParser:
         )
 
         clarification <<= (
-            (b(answer) | b(version) | atom | fundamental_atom)
+            (b(answer) | b(version) | root | fundamental_atom)
             + clarification_delimiter
-            + pp.DelimitedList(atom | number, clarification_delimiter)
+            + pp.DelimitedList(root | number, clarification_delimiter)
         ).set_parse_action(lambda x: Clarification(*x.as_list()))
 
         self.thesis = (
