@@ -2,7 +2,6 @@ import colorsys
 import dataclasses
 import functools
 import itertools
-import pathlib
 import re
 import typing
 
@@ -136,7 +135,7 @@ class Colored:
     segments: list[ColoredSegment]
 
     def __len__(self):
-        return self.segments[-1].end + 2
+        return len(self.text) + 2
 
     @functools.cached_property
     def css(self):
@@ -144,13 +143,18 @@ class Colored:
             return f"background: {self.segments[0].color.css}"
         return (
             "background: linear-gradient(90deg, "
-            + ", ".join(f"{s.color.css} {(s.start + 1.5) / len(self) * 100}%" for s in self.segments)
+            + ", ".join(
+                f"{s.color.css} {(s.start + 1) / len(self) * 100}%, {s.color.css} {(s.end + 1) / len(self) * 100}%"
+                for s in self.segments
+            )
             + ");"
         )
 
     @property
     def html(self):
-        return f"<span class='link' style='{self.css}'>&nbsp;{self.text}&nbsp;</span>"
+        return (
+            f"<span class='link' style='{self.css}'>&nbsp;{self.text.replace('(', ' ').replace(')', ' ')}&nbsp;</span>"
+        )
 
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
