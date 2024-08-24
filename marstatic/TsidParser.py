@@ -9,6 +9,7 @@ import pyparsing.exceptions
 @dataclass(frozen=True, kw_only=False)
 class Number:
     value: int
+    loc: tuple[int, int] | None = None
 
     def __repr__(self):
         return str(self.value)
@@ -17,6 +18,7 @@ class Number:
 @dataclass(frozen=True, kw_only=False)
 class FundamentalRoot:
     value: str
+    loc: tuple[int, int] | None = None
 
     def __repr__(self):
         return self.value
@@ -25,6 +27,7 @@ class FundamentalRoot:
 @dataclass(frozen=True, kw_only=False)
 class Root:
     value: str
+    loc: tuple[int, int] | None = None
 
     def __repr__(self):
         return self.value
@@ -34,6 +37,7 @@ class Root:
 class FundamentalAtom:
     root: FundamentalRoot
     number: Number | None = None
+    loc: tuple[int, int] | None = None
 
     def __repr__(self):
         if self.number is None:
@@ -143,18 +147,26 @@ class TsidParser:
 
         fundamental_root = (
             pp.Combine(pp.Char(pp.alphas.upper())[1, ...])
-            .set_parse_action(lambda x: FundamentalRoot(str(x[0])))
+            .set_parse_action(lambda _, loc, x: FundamentalRoot(str(x[0]), loc=(loc, loc + len(x[0]))))
             .set_name("fundamental root")
         )
         root = (
-            pp.Combine(pp.Char(pp.alphas.lower())[1, ...]).set_parse_action(lambda x: Root(str(x[0]))).set_name("root")
+            pp.Combine(pp.Char(pp.alphas.lower())[1, ...])
+            .set_parse_action(lambda _, loc, x: Root(str(x[0]), loc=(loc, loc + len(x[0]))))
+            .set_name("root")
         )
         number = (
-            pp.Combine(pp.Char(pp.nums)[1, ...]).set_parse_action(lambda x: Number(int(str(x[0])))).set_name("number")
+            pp.Combine(pp.Char(pp.nums)[1, ...])
+            .set_parse_action(lambda _, loc, x: Number(int(str(x[0])), loc=(loc, loc + len(x[0]))))
+            .set_name("number")
         )
         fundamental_atom = (
             (fundamental_root + pp.Opt(number))
-            .set_parse_action(lambda x: FundamentalAtom(*x.as_list()))
+            .set_parse_action(
+                lambda _, loc, x: FundamentalAtom(
+                    *x.as_list(), loc=(loc, loc + len(x[0].value) + (len(str(x[1].value)) if len(x) > 1 else 0))
+                )
+            )
             .set_name("fundamental atom")
         )
 

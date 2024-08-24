@@ -42,7 +42,7 @@ def fundamental_roots(o: T | T.Ans | T.V | T.C | T.a | T.A | T.N):
 def versions(o: T | T.Ans | T.V | T.C | T.a | T.A | T.N):
     if isinstance(o, T):
         return versions(o.value)
-    if isinstance(o, T.Ans):
+    if isinstance(o, T.Ans | T.C):
         return {r for pattern in o.value for r in versions(pattern)}
     if isinstance(o, T.V):
         return {o}
@@ -140,15 +140,20 @@ class Colorer:
                 result += self.flatten(e)
         return result
 
-    def color(self, o: T.R | T.A | T.V | T.C | T.r):
+    def color(self, o: T.R | T.A | T.V | T.C | T.r | str | T):
+        if isinstance(o, str):
+            print(o)
+            return self.color(tsid_parser.parse(o))
+        if isinstance(o, T):
+            return self.color(o.value)
         result = []
         if isinstance(o, T.R | T.A):
-            result = [(o, self.colorspace().color(o))]
+            result = [(o.loc, self.colorspace().color(o))]
         elif isinstance(o, T.V):
-            result = self.color(o.value[0]) + [(o.value[-1], self.colorspace(o.value[0]).color(o))]
+            result = self.color(o.value[0]) + [(o.value[-1].loc, self.colorspace(o.value[0]).color(o))]
         elif isinstance(o, T.C):
             first = self.color(o.first)
-            result = first + [(c, first[-1][1].saturated(0.9 ** (i + 1))) for i, c in enumerate(o.other)]
+            result = first + [(c.loc, first[-1][1].saturated(0.9 ** (i + 1))) for i, c in enumerate(o.other)]
         return self.flatten(result)
 
     @functools.cached_property
@@ -177,4 +182,4 @@ c = Colorer.from_text(pathlib.Path("example_source.md").read_text(encoding="utf8
 # print(c.color(tsid_parser.parse("R1").value))
 # print(c.color(tsid_parser.parse("R-a").value))
 # print(c.color(tsid_parser.parse("A1.1.2").value))
-print(c.color(tsid_parser.parse("(R-r).0").value))
+print(c.color("(R-rr).0"))
