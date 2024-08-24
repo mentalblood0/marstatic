@@ -78,6 +78,22 @@ class Colorspace:
 
 
 @dataclass(frozen=True, kw_only=False)
+class VersionColorspace:
+    first: T.V.First | T.V
+    members: set[T.V.Other]
+
+    def __len__(self):
+        return len(self.members)
+
+    @functools.cached_property
+    def number_by_value(self):
+        return {r.value: i for i, r in enumerate(sorted(self.members, key=lambda r: r.value))}
+
+    def color(self, o: T.V):
+        return color(self.number_by_value[o.value[-1].value], len(self))
+
+
+@dataclass(frozen=True, kw_only=False)
 class Colorer:
     tsid_heuristic = re.compile(r"\*\*([^А-Яа-я]+?)\*\*:?")
 

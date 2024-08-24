@@ -1,3 +1,4 @@
+import functools
 import typing
 from dataclasses import dataclass
 
@@ -41,27 +42,70 @@ class FundamentalAtom:
 
 
 @dataclass(init=False)
-class Tuple[T]:
-    value: tuple[T, ...]
+class Clarification:
+    First = typing.Union["Version", "Answer", FundamentalAtom]
+    Other = Root | Number
 
-    def __init__(self, *args: T):
-        self.value = tuple(args)
+    first: First
+    other: tuple[Other, ...]
+
+    @functools.cached_property
+    def value(self):
+        return (self.first, *self.other)
+
+    def __init__(self, first: First, *other: Other):
+        self.first = first
+        self.other = other
 
     def __hash__(self):
         return hash(self.value)
 
-
-class Clarification(Tuple[typing.Union["Version", "Answer", Root, FundamentalAtom, Number]]):
     def __repr__(self):
         return f"C{self.value}"
 
 
-class Version(Tuple[Clarification | Root | FundamentalAtom | Number]):
+@dataclass(init=False)
+class Version:
+    First = Clarification | FundamentalAtom
+    Other = Root | Number
+
+    first: First
+    other: tuple[Other, ...]
+
+    @functools.cached_property
+    def value(self):
+        return (self.first, *self.other)
+
+    def __init__(self, first: First, *other: Other):
+        self.first = first
+        self.other = other
+
+    def __hash__(self):
+        return hash(self.value)
+
     def __repr__(self):
         return f"V{self.value}"
 
 
-class Answer(Tuple[Version | Clarification | Root | FundamentalAtom | Number]):
+@dataclass(init=False)
+class Answer:
+    First = Version | Clarification | FundamentalAtom
+    Other = Version | Clarification | FundamentalAtom | Root
+
+    first: First
+    other: tuple[Other, ...]
+
+    @functools.cached_property
+    def value(self):
+        return (self.first, *self.other)
+
+    def __init__(self, first: First, *other: Other):
+        self.first = first
+        self.other = other
+
+    def __hash__(self):
+        return hash(self.value)
+
     def __repr__(self):
         return f"A{self.value}"
 
