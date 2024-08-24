@@ -1,7 +1,6 @@
 import functools
 
 import pytest
-from pytest_benchmark import fixture
 
 from ..TsidParser import T, TsidParser
 
@@ -66,7 +65,3 @@ def test_answer(parser: TsidParser):
 )
 def test_realistic(parser: TsidParser, e: str, out: T.A | T.a | T.Ans | T.V | T.C):
     assert parser.parse(e) == T(out)
-
-
-def test_benchmark_parse(benchmark: fixture.BenchmarkFixture, parser: TsidParser):
-    benchmark(lambda: parser.parse("((A1.1.2)/(R-r)).4.1"))

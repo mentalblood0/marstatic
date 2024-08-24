@@ -1,17 +1,32 @@
 import colorsys
+import dataclasses
 import functools
 import itertools
 import pathlib
 import re
-from dataclasses import dataclass
+import typing
 
 from marstatic.TsidParser import T, TsidParser
 
 tsid_parser = TsidParser()
 
 
-def color(n: int, N: int):
-    return tuple(int(255 * i) for i in colorsys.hsv_to_rgb(n / N, 0.35, 0.78))
+@dataclasses.dataclass(frozen=True, kw_only=False)
+class Color:
+    h: float
+    s: float
+    v: float
+
+    def saturated(self, c: float):
+        return dataclasses.replace(self, s=self.s * c)
+
+    @functools.cached_property
+    def rgb(self):
+        return tuple(int(255 * i) for i in colorsys.hsv_to_rgb(self.h, self.s, self.v))
+
+    @classmethod
+    def from_shift(cls, shift: float):
+        return cls(shift, 0.35, 0.78)
 
 
 def fundamental_roots(o: T | T.Ans | T.V | T.C | T.a | T.A | T.N):
@@ -34,16 +49,13 @@ def versions(o: T | T.Ans | T.V | T.C | T.a | T.A | T.N):
     return set()
 
 
-@dataclass(frozen=True, kw_only=False)
+@dataclasses.dataclass(frozen=True, kw_only=False)
 class Tsid:
     value: str
 
     @functools.cached_property
     def parsed(self):
-        result = tsid_parser.parse(self.value)
-        if not isinstance(result, T):
-            raise ValueError
-        return result
+        return tsid_parser.parse(self.value)
 
     @functools.cached_property
     def fundamental_roots(self):
@@ -59,7 +71,7 @@ class Tsid:
         raise ValueError(f"{self} < {o}")
 
 
-@dataclass(frozen=True, kw_only=False)
+@dataclasses.dataclass(frozen=True, kw_only=False)
 class Colorspace:
     members: set[T.R]
 
@@ -72,12 +84,12 @@ class Colorspace:
 
     def color(self, o: T.R | T.A):
         if isinstance(o, T.R):
-            return color(self.number_by_value[o.value], len(self))
+            return Color.from_shift(self.number_by_value[o.value] / len(self))
         if isinstance(o, T.A):
-            return color(self.number_by_value[o.root.value], len(self))
+            return Color.from_shift(self.number_by_value[o.root.value] / len(self))
 
 
-@dataclass(frozen=True, kw_only=False)
+@dataclasses.dataclass(frozen=True, kw_only=False)
 class VersionColorspace:
     First = T.V.First | T.V
 
@@ -92,10 +104,10 @@ class VersionColorspace:
         return {r.value: i for i, r in enumerate(sorted(self.members, key=lambda r: r.value))}
 
     def color(self, o: T.V):
-        return color(self.number_by_value[o.value[-1].value], len(self))
+        return Color.from_shift(self.number_by_value[o.value[-1].value] / len(self))
 
 
-@dataclass(frozen=True, kw_only=False)
+@dataclasses.dataclass(frozen=True, kw_only=False)
 class Colorer:
     tsid_heuristic = re.compile(r"\*\*([^А-Яа-я]+?)\*\*:?")
 
@@ -109,12 +121,35 @@ class Colorer:
     def versions(self):
         return {r for t in self.tsids for r in t.versions}
 
-    @functools.cached_property
-    def colorspace(self):
-        return Colorspace(self.fundamental_roots)
+    @typing.overload
+    def colorspace(self, first: None = None) -> Colorspace: ...
+    @typing.overload
+    def colorspace(self, first: VersionColorspace.First) -> VersionColorspace: ...
+    def colorspace(self, first: VersionColorspace.First | None = None):
+        if first is None:
+            return Colorspace(self.fundamental_roots)
+        elif isinstance(first, VersionColorspace.First):
+            return VersionColorspace(first, {o for v in self.versions if v.first == first for o in v.other})
 
-    def version_colorspace(self, first: VersionColorspace.First):
-        return VersionColorspace(first, {o for v in self.versions if v.first == first for o in v.other})
+    def flatten(self, l: list):
+        result = []
+        for e in l:
+            if isinstance(e, tuple):
+                result.append(e)
+            elif isinstance(e, list):
+                result += self.flatten(e)
+        return result
+
+    def color(self, o: T.R | T.A | T.V | T.C | T.r):
+        result = []
+        if isinstance(o, T.R | T.A):
+            result = [(o, self.colorspace().color(o))]
+        elif isinstance(o, T.V):
+            result = self.color(o.value[0]) + [(o.value[-1], self.colorspace(o.value[0]).color(o))]
+        elif isinstance(o, T.C):
+            first = self.color(o.first)
+            result = first + [(c, first[-1][1].saturated(0.9 ** (i + 1))) for i, c in enumerate(o.other)]
+        return self.flatten(result)
 
     @functools.cached_property
     def tsid_by_name(self):
@@ -137,7 +172,9 @@ class Colorer:
 c = Colorer.from_text(pathlib.Path("example_source.md").read_text(encoding="utf8"))
 # for t in sorted(c.tsids):
 #     print(f'("{t.value}", ),')
-print(c.fundamental_roots)
-print(c.versions)
-print(c.colorspace.color(tsid_parser.parse("R1").value))
-print(c.version_colorspace(tsid_parser.parse("R").value).color(tsid_parser.parse("R-a").value))
+# print(c.fundamental_roots)
+# print(c.versions)
+# print(c.color(tsid_parser.parse("R1").value))
+# print(c.color(tsid_parser.parse("R-a").value))
+# print(c.color(tsid_parser.parse("A1.1.2").value))
+print(c.color(tsid_parser.parse("(R-r).0").value))
