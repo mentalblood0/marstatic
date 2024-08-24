@@ -24,6 +24,22 @@ class Color:
     def rgb(self):
         return tuple(int(255 * i) for i in colorsys.hsv_to_rgb(self.h, self.s, self.v))
 
+    @property
+    def r(self):
+        return self.rgb[0]
+
+    @property
+    def g(self):
+        return self.rgb[1]
+
+    @property
+    def b(self):
+        return self.rgb[2]
+
+    @property
+    def css(self):
+        return f"rgba({self.r}, {self.g}, {self.b}, 1)"
+
     @classmethod
     def from_shift(cls, shift: float):
         return cls(shift, 0.35, 0.78)
@@ -108,9 +124,40 @@ class VersionColorspace:
 
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
+class ColoredSegment:
+    start: int
+    end: int
+    color: Color
+
+
+@dataclasses.dataclass(frozen=True, kw_only=False)
+class Colored:
+    text: str
+    segments: list[ColoredSegment]
+
+    def __len__(self):
+        return self.segments[-1].end + 2
+
+    @functools.cached_property
+    def css(self):
+        if len(self.segments) == 1:
+            return f"background: {self.segments[0].color.css}"
+        return (
+            "background: linear-gradient(90deg, "
+            + ", ".join(f"{s.color.css} {(s.start + 2) / len(self) * 100}%" for s in self.segments)
+            + ");"
+        )
+
+    @property
+    def html(self):
+        return f"<span class='link' style='{self.css}'>&nbsp;{self.text}&nbsp;</span>"
+
+
+@dataclasses.dataclass(frozen=True, kw_only=False)
 class Colorer:
     tsid_heuristic = re.compile(r"\*\*([^А-Яа-я]+?)\*\*:?")
 
+    lines: list[str] = dataclasses.field(repr=False)
     tsids: set[Tsid]
 
     @functools.cached_property
@@ -140,20 +187,35 @@ class Colorer:
                 result += self.flatten(e)
         return result
 
-    def color(self, o: T.R | T.A | T.V | T.C | T.r | str | T):
+    def replace(self, m: re.Match):
+        e = m.group(1)
+        return self.colored(e).html + (":" if m.group(0)[-1] == ":" else "")
+
+    @typing.overload
+    def colored(self, o: str) -> Colored: ...
+    @typing.overload
+    def colored(self, o: T.R | T.A | T.V | T.C | T.r | T.Ans | T.N | T) -> list[tuple[tuple[int, int], Color]]: ...
+    @typing.overload
+    def colored(self, o: None = None) -> str: ...
+    def colored(self, o: T.R | T.A | T.V | T.C | T.r | T.Ans | T.N | str | T | None = None):
+        if o is None:
+            return "\n".join(re.sub(self.tsid_heuristic, self.replace, l) for l in self.lines)
         if isinstance(o, str):
-            print(o)
-            return self.color(tsid_parser.parse(o))
+            return Colored(o, [ColoredSegment(c[0][0], c[0][1], c[1]) for c in self.colored(tsid_parser.parse(o))])
         if isinstance(o, T):
-            return self.color(o.value)
+            return self.colored(o.value)
         result = []
         if isinstance(o, T.R | T.A):
             result = [(o.loc, self.colorspace().color(o))]
         elif isinstance(o, T.V):
-            result = self.color(o.value[0]) + [(o.value[-1].loc, self.colorspace(o.value[0]).color(o))]
+            result = self.colored(o.value[0]) + [(o.value[-1].loc, self.colorspace(o.value[0]).color(o))]
         elif isinstance(o, T.C):
-            first = self.color(o.first)
-            result = first + [(c.loc, first[-1][1].saturated(0.9 ** (i + 1))) for i, c in enumerate(o.other)]
+            first = self.colored(o.first)
+            result = first + [(c.loc, first[-1][1].saturated(0.57 ** (i + 1))) for i, c in enumerate(o.other)]
+        elif isinstance(o, T.Ans):
+            result = [self.colored(o.first)]
+            for a in o.other:
+                result += self.colored(a)
         return self.flatten(result)
 
     @functools.cached_property
@@ -166,20 +228,13 @@ class Colorer:
     @classmethod
     def from_lines(cls, lines: list[str]):
         return cls(
-            {Tsid(m.group(1)) for m in itertools.chain.from_iterable(re.finditer(cls.tsid_heuristic, l) for l in lines)}
+            lines,
+            {
+                Tsid(m.group(1))
+                for m in itertools.chain.from_iterable(re.finditer(cls.tsid_heuristic, l) for l in lines)
+            },
         )
 
     @classmethod
     def from_text(cls, text: str):
         return cls.from_lines(text.splitlines())
-
-
-c = Colorer.from_text(pathlib.Path("example_source.md").read_text(encoding="utf8"))
-# for t in sorted(c.tsids):
-#     print(f'("{t.value}", ),')
-# print(c.fundamental_roots)
-# print(c.versions)
-# print(c.color(tsid_parser.parse("R1").value))
-# print(c.color(tsid_parser.parse("R-a").value))
-# print(c.color(tsid_parser.parse("A1.1.2").value))
-print(c.color("(R-rr).0"))
