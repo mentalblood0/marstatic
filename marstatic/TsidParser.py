@@ -134,7 +134,7 @@ class Thesis:
 T = Thesis
 
 
-@dataclass(frozen=False, kw_only=True)
+@dataclass(frozen=False, kw_only=True, unsafe_hash=True)
 class TsidParser:
     clarification_delimiter: str = "."
     version_delimiter: str = "-"
@@ -204,6 +204,7 @@ class TsidParser:
             .set_name("thesis")
         )
 
+    @functools.cache
     def parse(self, s: str):
         try:
             return self.thesis.parse_string(s, parse_all=True)[0]
