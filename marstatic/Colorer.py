@@ -162,22 +162,22 @@ class Colored:
         if i is None:
             if len(self.segments) == 1:
                 return self.segments[0].color.css
-            return f"linear-gradient(90deg, " + ", ".join(self.css(i) for i in range(len(self.segments))) + ")"
+            return f"linear-gradient(90deg," + ",".join(self.css(i) for i in range(len(self.segments))) + ")"
         if isinstance(i, int):
             s = self.segments[i]
             result = ""
             # if i != 0:
             #     p = self.segments[i - 1]
             #     result += f"{Color.transparent().css} {self.sshift((p.end + s.start) / 2)}, "
-            result += f"{s.color.css} {self.sshift(s.start)}, {s.color.css} {self.sshift(s.end)}"
+            result += f"{s.color.css} {self.sshift(s.start)},{s.color.css} {self.sshift(s.end)}"
             # if i != len(self.segments) - 1:
             #     n = self.segments[i + 1]
             #     result += f", {Color.transparent().css} {self.sshift((s.end + n.start) / 2)}"
             return result
 
     def html(self, c: str, link: bool):
-        additional = f"href='#{c}'" if link else f"href='#{c}' id='{c}'"
-        return f"<a class='link {c}' {additional}>{self.text_to_render.replace(' ', '&nbsp;')}</a>"
+        additional = f"href='#{c}'" if link else f"href='#{c}'id='{c}'"
+        return f"<a class='link {c}'{additional}>{self.text_to_render.replace(' ', '&nbsp;')}</a>"
 
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
