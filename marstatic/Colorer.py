@@ -115,7 +115,7 @@ class Colorspace:
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
 class VersionColorspace:
-    First = T.V.First | T.V
+    First = T.V.First | T.V | None
 
     first: First
     members: set[T.V.Other]
@@ -189,8 +189,8 @@ class Colorer:
 
     tsid_heuristic = re.compile(r"\*\*([^А-Яа-я]+?)\*\*:?")
 
-    lines: list[str] = dataclasses.field(repr=False)
-    tsids: set[Tsid]
+    lines: list[str] = dataclasses.field(repr=False, hash=False)
+    tsids: set[Tsid] = dataclasses.field(hash=False)
     versions_colorspace_mode: VersionsColorspaceMode
 
     @functools.cached_property
@@ -205,12 +205,13 @@ class Colorer:
     def colorspace(self, first: None = None) -> Colorspace: ...
     @typing.overload
     def colorspace(self, first: VersionColorspace.First) -> VersionColorspace: ...
+    @functools.cache
     def colorspace(self, first: VersionColorspace.First | None = None):
         if first is None:
             return Colorspace(self.fundamental_roots)
         elif isinstance(first, T.Ans | T.C | T.A):
             return VersionColorspace(
-                first,
+                None,
                 {
                     o
                     for v in self.versions
