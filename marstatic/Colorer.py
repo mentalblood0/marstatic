@@ -15,9 +15,13 @@ class Color:
     h: float
     s: float
     v: float
+    alpha: float = 1
 
     def saturated(self, c: float):
         return dataclasses.replace(self, s=self.s * c)
+
+    def transpared(self, alpha: float):
+        return dataclasses.replace(self, alpha=alpha)
 
     @functools.cached_property
     def rgb(self):
@@ -37,11 +41,15 @@ class Color:
 
     @property
     def css(self):
-        return f"rgba({self.r}, {self.g}, {self.b}, 1)"
+        return f"rgba({self.r}, {self.g}, {self.b}, {self.alpha})"
 
     @classmethod
     def from_shift(cls, shift: float):
         return cls(shift, 0.35, 0.78)
+
+    @classmethod
+    def transparent(cls):
+        return cls(0, 0, 0, 0)
 
 
 def fundamental_roots(o: T | T.Ans | T.V | T.C | T.a | T.A | T.N):
@@ -133,28 +141,46 @@ class ColoredSegment:
 class Colored:
     text: str
     segments: list[ColoredSegment]
+    padding: int = 1
 
     def __len__(self):
-        return len(self.text) + 2
+        return len(self.text_to_render)
 
     @functools.cached_property
-    def css(self):
-        if len(self.segments) == 1:
-            return f"background: {self.segments[0].color.css}"
-        return (
-            "background: linear-gradient(90deg, "
-            + ", ".join(
-                f"{s.color.css} {(s.start + 1) / len(self) * 100}%, {s.color.css} {(s.end + 1) / len(self) * 100}%"
-                for s in self.segments
-            )
-            + ");"
-        )
+    def text_to_render(self):
+        return " " * self.padding + self.text.strip("()"[0]).replace("(", " ").replace(")", " ") + " " * self.padding
 
-    @property
-    def html(self):
-        return (
-            f"<span class='link' style='{self.css}'>&nbsp;{self.text.replace('(', ' ').replace(')', ' ')}&nbsp;</span>"
-        )
+    @functools.cached_property
+    def shift(self):
+        return self.padding - self.text.find(self.text_to_render[self.padding])
+
+    def sshift(self, segment_point: float | int):
+        return f"{round((segment_point + self.shift) / len(self) * 100, 2)}%"
+
+    def css(self, i: int | None = None):
+        if i is None:
+            if len(self.segments) == 1:
+                return (
+                    f"linear-gradient(90deg, "
+                    f"{self.segments[0].color.css} {self.sshift(self.padding - self.shift)}, "
+                    f"{self.segments[0].color.css} {self.sshift(len(self) - self.padding-self.shift)}"
+                    ")"
+                )
+            return f"linear-gradient(90deg, " + ", ".join(self.css(i) for i in range(len(self.segments))) + ")"
+        if isinstance(i, int):
+            s = self.segments[i]
+            result = ""
+            # if i != 0:
+            #     p = self.segments[i - 1]
+            #     result += f"{Color.transparent().css} {self.sshift((p.end + s.start) / 2)}, "
+            result += f"{s.color.css} {self.sshift(s.start)}, {s.color.css} {self.sshift(s.end)}"
+            # if i != len(self.segments) - 1:
+            #     n = self.segments[i + 1]
+            #     result += f", {Color.transparent().css} {self.sshift((s.end + n.start) / 2)}"
+            return result
+
+    def html(self, c: str):
+        return f"<span class='link {c}'>{self.text_to_render.replace(' ', '&nbsp;')}</span>"
 
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
@@ -191,9 +217,19 @@ class Colorer:
                 result += self.flatten(e)
         return result
 
+    @functools.cached_property
+    def number_by_tsid(self):
+        return {r.value: i for i, r in enumerate(sorted(self.tsids))}
+
     def replace(self, m: re.Match):
         e = m.group(1)
-        return self.colored(e).html + (":" if m.group(0)[-1] == ":" else "")
+        return self.colored(e).html(f"i{self.number_by_tsid[e]}") + (":" if m.group(0)[-1] == ":" else "")
+
+    @functools.cached_property
+    def css(self):
+        return [
+            {"class": f"i{self.number_by_tsid[t.value]}", "background": self.colored(t.value).css()} for t in self.tsids
+        ]
 
     @typing.overload
     def colored(self, o: str) -> Colored: ...
