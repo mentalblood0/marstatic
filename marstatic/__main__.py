@@ -23,7 +23,7 @@ args = parser.parse_args()
 input = args.input.read_text(encoding="utf8")
 
 c = Colorer.from_text(
-    pathlib.Path("example_source.md").read_text(encoding="utf8"), versions_colorspace_mode=args.versions_colorspace
+    pathlib.Path(args.input).read_text(encoding="utf8"), versions_colorspace_mode=args.versions_colorspace
 )
 body = markdown.markdown(c.colored())
 
