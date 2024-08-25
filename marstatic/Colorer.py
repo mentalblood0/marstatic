@@ -241,9 +241,13 @@ class Colorer:
 
     @functools.cached_property
     def css(self):
-        return [
-            {"class": f"i{self.number_by_tsid[t.value]}", "background": self.colored(t.value).css()} for t in self.tsids
-        ]
+        return sorted(
+            [
+                {"class": f"i{self.number_by_tsid[t.value]}", "background": self.colored(t.value).css()}
+                for t in self.tsids
+            ],
+            key=lambda c: c["class"],
+        )
 
     @typing.overload
     def colored(self, o: str) -> Colored: ...
