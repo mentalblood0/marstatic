@@ -179,8 +179,9 @@ class Colored:
             #     result += f", {Color.transparent().css} {self.sshift((s.end + n.start) / 2)}"
             return result
 
-    def html(self, c: str):
-        return f"<span class='link {c}'>{self.text_to_render.replace(' ', '&nbsp;')}</span>"
+    def html(self, c: str, link: bool):
+        additional = f"href='#{c}'" if link else f"href='#{c}' id='{c}'"
+        return f"<a class='link {c}' {additional}>{self.text_to_render.replace(' ', '&nbsp;')}</a>"
 
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
@@ -223,7 +224,9 @@ class Colorer:
 
     def replace(self, m: re.Match):
         e = m.group(1)
-        return self.colored(e).html(f"i{self.number_by_tsid[e]}") + (":" if m.group(0)[-1] == ":" else "")
+        return self.colored(e).html(f"i{self.number_by_tsid[e]}", link=not m.group(0).endswith(":")) + (
+            ":" if m.group(0)[-1] == ":" else ""
+        )
 
     @functools.cached_property
     def css(self):
