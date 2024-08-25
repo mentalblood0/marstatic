@@ -16,13 +16,9 @@ class Color:
     h: float
     s: float
     v: float
-    alpha: float = 1
 
     def saturated(self, c: float):
         return dataclasses.replace(self, s=self.s * c)
-
-    def transpared(self, alpha: float):
-        return dataclasses.replace(self, alpha=alpha)
 
     @functools.cached_property
     def rgb(self):
@@ -42,15 +38,11 @@ class Color:
 
     @property
     def css(self):
-        return f"rgba({self.r}, {self.g}, {self.b}, {self.alpha})"
+        return "#%02x%02x%02x" % (self.r, self.g, self.b)
 
     @classmethod
     def from_shift(cls, shift: float):
         return cls(shift, 0.35, 0.78)
-
-    @classmethod
-    def transparent(cls):
-        return cls(0, 0, 0, 0)
 
 
 def fundamental_roots(o: T | T.Ans | T.V | T.C | T.a | T.A | T.N):
