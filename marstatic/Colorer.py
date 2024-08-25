@@ -149,7 +149,7 @@ class Colored:
 
     @functools.cached_property
     def text_to_render(self):
-        return " " * self.padding + self.text.strip("()"[0]).replace("(", " ").replace(")", " ") + " " * self.padding
+        return " " * self.padding + self.text.strip("()").replace("(", " ").replace(")", " ") + " " * self.padding
 
     @functools.cached_property
     def shift(self):
