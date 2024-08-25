@@ -160,12 +160,7 @@ class Colored:
     def css(self, i: int | None = None):
         if i is None:
             if len(self.segments) == 1:
-                return (
-                    f"linear-gradient(90deg, "
-                    f"{self.segments[0].color.css} {self.sshift(self.padding - self.shift)}, "
-                    f"{self.segments[0].color.css} {self.sshift(len(self) - self.padding-self.shift)}"
-                    ")"
-                )
+                return self.segments[0].color.css
             return f"linear-gradient(90deg, " + ", ".join(self.css(i) for i in range(len(self.segments))) + ")"
         if isinstance(i, int):
             s = self.segments[i]
