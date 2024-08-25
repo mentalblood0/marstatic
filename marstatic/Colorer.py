@@ -1,5 +1,6 @@
 import colorsys
 import dataclasses
+import enum
 import functools
 import itertools
 import re
@@ -181,10 +182,16 @@ class Colored:
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
 class Colorer:
+    class VersionsColorspaceMode(enum.Enum):
+        MANY = "many"
+        ONE = "one"
+        SHARED = "shared"
+
     tsid_heuristic = re.compile(r"\*\*([^А-Яа-я]+?)\*\*:?")
 
     lines: list[str] = dataclasses.field(repr=False)
     tsids: set[Tsid]
+    versions_colorspace_mode: VersionsColorspaceMode
 
     @functools.cached_property
     def fundamental_roots(self):
@@ -201,8 +208,16 @@ class Colorer:
     def colorspace(self, first: VersionColorspace.First | None = None):
         if first is None:
             return Colorspace(self.fundamental_roots)
-        elif isinstance(first, VersionColorspace.First):
-            return VersionColorspace(first, {o for v in self.versions if v.first == first for o in v.other})
+        elif isinstance(first, T.Ans | T.C | T.A):
+            return VersionColorspace(
+                first,
+                {
+                    o
+                    for v in self.versions
+                    if (v.first == first) or self.versions_colorspace_mode == Colorer.VersionsColorspaceMode.ONE
+                    for o in v.other
+                },
+            )
 
     def flatten(self, l: list):
         result = []
@@ -257,15 +272,17 @@ class Colorer:
         return self.flatten(result)
 
     @classmethod
-    def from_lines(cls, lines: list[str]):
+    def from_lines(cls, lines: list[str], *args, **kwargs):
         return cls(
             lines,
             {
                 Tsid(m.group(1))
                 for m in itertools.chain.from_iterable(re.finditer(cls.tsid_heuristic, l) for l in lines)
             },
+            *args,
+            **kwargs,
         )
 
     @classmethod
-    def from_text(cls, text: str):
-        return cls.from_lines(text.splitlines())
+    def from_text(cls, text: str, *args, **kwargs):
+        return cls.from_lines(text.splitlines(), *args, **kwargs)

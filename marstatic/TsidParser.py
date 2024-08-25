@@ -70,7 +70,7 @@ class Clarification:
 
 @dataclass(init=False)
 class Version:
-    First = Clarification | FundamentalAtom
+    First = typing.Union["Answer", Clarification, FundamentalAtom]
     Other = Root | Number
 
     first: First
@@ -174,16 +174,7 @@ class TsidParser:
         clarification = pp.Forward().set_name("clarification")
 
         version_delimiter = pp.Char(self.version_delimiter).suppress()
-        version = (
-            (
-                (clarification | root | fundamental_atom)
-                + version_delimiter
-                + pp.DelimitedList(root | number, version_delimiter)
-            )
-            .set_parse_action(lambda x: Version(*x.as_list()))
-            .set_name("version")
-        )
-
+        version = pp.Forward().set_name("version")
         answer_delimiter = pp.Char(self.answer_delimiter).suppress()
         answer_element = b(version) | b(clarification) | root | fundamental_atom
         answer = (
@@ -197,6 +188,12 @@ class TsidParser:
             + clarification_delimiter
             + pp.DelimitedList(root | number, clarification_delimiter)
         ).set_parse_action(lambda x: Clarification(*x.as_list()))
+
+        version <<= (
+            (b(answer) | b(clarification) | root | fundamental_atom)
+            + version_delimiter
+            + pp.DelimitedList(root | number, version_delimiter)
+        ).set_parse_action(lambda x: Version(*x.as_list()))
 
         self.thesis = (
             (answer | version | clarification | fundamental_atom)
