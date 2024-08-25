@@ -261,7 +261,15 @@ class Colorer:
         if isinstance(o, T.R | T.A):
             result = [(o.loc, self.colorspace().color(o))]
         elif isinstance(o, T.V):
-            result = self.colored(o.first) + [(o.other[-1].loc, self.colorspace(o.first).color(o))]
+            result = self.colored(o.first)
+            for i in range(len(o.other)):
+                oo = o.other[i]
+                vcs_root = T.V(o.first, *o.other[:i]) if i > 1 else o.first
+                vcs_query = T.V(o.first, *o.other[: i + 1])
+                assert oo.loc is not None
+                if oo.loc is None:
+                    raise ValueError(f"{oo} loc is {oo.loc}")
+                result.append((oo.loc, self.colorspace(vcs_root).color(vcs_query)))
         elif isinstance(o, T.C):
             first = self.colored(o.first)
             result = first + [(c.loc, first[-1][1].saturated(0.57 ** (i + 1))) for i, c in enumerate(o.other)]
