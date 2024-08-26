@@ -23,7 +23,7 @@ def test_clarification(parser: TsidParser):
 
 
 def test_version(parser: TsidParser):
-    assert parser.parse("A2.b-c") == T(T.V(T.C(T.A(T.R("A"), T.N(2)), T.r("b")), T.r("c")))
+    assert parser.parse("(A2.b)-c") == T(T.V(T.C(T.A(T.R("A"), T.N(2)), T.r("b")), T.r("c")))
     assert parser.parse("(R-r).1") == T(T.C(T.V(T.A(T.R("R")), T.r("r")), T.N(1)))
 
 
@@ -63,5 +63,5 @@ def test_answer(parser: TsidParser):
         ),
     ],
 )
-def test_realistic(parser: TsidParser, e: str, out: T.A | T.a | T.Ans | T.V | T.C):
+def test_realistic(parser: TsidParser, e: str, out: T.A | T.r | T.Ans | T.V | T.C):
     assert parser.parse(e) == T(out)

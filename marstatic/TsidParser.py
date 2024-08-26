@@ -119,7 +119,6 @@ class Thesis:
     Ans = Answer
     V = Version
     C = Clarification
-    a = Root
     A = FundamentalAtom
     r = Root
     R = FundamentalRoot
@@ -207,30 +206,3 @@ class TsidParser:
             return self.thesis.parse_string(s, parse_all=True)[0]
         except pyparsing.exceptions.ParseException as e:
             raise Exception(f'Parsing "{s}": {e}')
-
-
-# class TFactory:
-#     parser = TsidParser()
-#
-#     def __init__(self):
-#         self.value: None | T = None
-#
-#     def __getattribute__(self, key: str):
-#         if key in ("value", "parser", "end"):
-#             return super().__getattribute__(key)
-#         parsed_key = self.parser.parse(key)
-#         if self.value is None:
-#             self.value = parsed_key
-#         elif isinstance(self.value, FundamentalAtom):
-#             self.value = Clarification(self.value, )
-#
-#         return self
-#
-#     @property
-#     def end(self):
-#         result = self.value
-#         self.value = None
-#         return result
-#
-#
-# TT = TFactory()
