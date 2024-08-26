@@ -20,25 +20,9 @@ class Color:
     def saturated(self, c: float):
         return dataclasses.replace(self, s=self.s * c)
 
-    @functools.cached_property
-    def rgb(self):
-        return tuple(int(255 * i) for i in colorsys.hsv_to_rgb(self.h, self.s, self.v))
-
-    @property
-    def r(self):
-        return self.rgb[0]
-
-    @property
-    def g(self):
-        return self.rgb[1]
-
-    @property
-    def b(self):
-        return self.rgb[2]
-
     @property
     def css(self):
-        return "#%02x%02x%02x" % (self.r, self.g, self.b)
+        return "#%02x%02x%02x" % tuple(int(255 * i) for i in colorsys.hsv_to_rgb(self.h, self.s, self.v))
 
     @classmethod
     def from_shift(cls, shift: float):
@@ -157,15 +141,7 @@ class Colored:
             return f"linear-gradient(90deg," + ",".join(self.css(i) for i in range(len(self.segments))) + ")"
         if isinstance(i, int):
             s = self.segments[i]
-            result = ""
-            # if i != 0:
-            #     p = self.segments[i - 1]
-            #     result += f"{Color.transparent().css} {self.sshift((p.end + s.start) / 2)}, "
-            result += f"{s.color.css} {self.sshift(s.start)},{s.color.css} {self.sshift(s.end)}"
-            # if i != len(self.segments) - 1:
-            #     n = self.segments[i + 1]
-            #     result += f", {Color.transparent().css} {self.sshift((s.end + n.start) / 2)}"
-            return result
+            return f"{s.color.css} {self.sshift(s.start)},{s.color.css} {self.sshift(s.end)}"
 
     def html(self, c: str, link: bool):
         additional = f"href='#{c}'" if link else f"href='#{c}'id='{c}'"
@@ -247,16 +223,21 @@ class Colorer:
     def colored(self, o: T.R | T.A | T.V | T.C | T.r | T.Ans | T.N | T) -> list[tuple[tuple[int, int], Color]]: ...
     @typing.overload
     def colored(self, o: None = None) -> str: ...
+
     def colored(self, o: T.R | T.A | T.V | T.C | T.r | T.Ans | T.N | str | T | None = None):
         if o is None:
             return "\n".join(re.sub(self.tsid_heuristic, self.replace, l) for l in self.lines)
+
         if isinstance(o, str):
             return Colored(o, [ColoredSegment(c[0][0], c[0][1], c[1]) for c in self.colored(tsid_parser.parse(o))])
+
         if isinstance(o, T):
             return self.colored(o.value)
+
         result = []
         if isinstance(o, T.R | T.A):
             result = [(o.loc, self.colorspace().color(o))]
+
         elif isinstance(o, T.V):
             result = self.colored(o.first)
             for i in range(len(o.other)):
@@ -267,17 +248,21 @@ class Colorer:
                 if oo.loc is None:
                     raise ValueError(f"{oo} loc is {oo.loc}")
                 result.append((oo.loc, self.colorspace(vcs_root).color(vcs_query)))
+
         elif isinstance(o, T.C):
             first = self.colored(o.first)
             result = first + [(c.loc, first[-1][1].saturated(0.57 ** (i + 1))) for i, c in enumerate(o.other)]
+
         elif isinstance(o, T.Ans):
             result = [self.colored(o.first)]
             for a in o.other:
                 result += self.colored(a)
+
         return self.flatten(result)
 
     @classmethod
-    def from_lines(cls, lines: list[str], *args, **kwargs):
+    def from_text(cls, text: str, *args, **kwargs):
+        lines = text.splitlines()
         return cls(
             lines,
             {
@@ -287,7 +272,3 @@ class Colorer:
             *args,
             **kwargs,
         )
-
-    @classmethod
-    def from_text(cls, text: str, *args, **kwargs):
-        return cls.from_lines(text.splitlines(), *args, **kwargs)
