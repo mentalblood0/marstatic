@@ -29,7 +29,7 @@ class Color:
         return cls(shift, 0.35, 0.78)
 
 
-def fundamental_roots(o: T | T.Ans | T.V | T.C | T.a | T.A | T.N):
+def fundamental_roots(o: T | T.Ans | T.V | T.C | T.r | T.A | T.N):
     if isinstance(o, T):
         return fundamental_roots(o.value)
     if isinstance(o, T.Ans | T.V | T.C):
@@ -39,7 +39,7 @@ def fundamental_roots(o: T | T.Ans | T.V | T.C | T.a | T.A | T.N):
     return set()
 
 
-def versions(o: T | T.Ans | T.V | T.C | T.a | T.A | T.N):
+def versions(o: T | T.Ans | T.V | T.C | T.r | T.A | T.N):
     if isinstance(o, T):
         return versions(o.value)
     if isinstance(o, T.Ans | T.C):
