@@ -20,9 +20,8 @@ parser.add_argument(
 parser.add_argument("-H", "--header", type=str, required=True)
 
 args = parser.parse_args()
-input = args.input.read_text(encoding="utf8")
 
-text = pathlib.Path(args.input).read_text(encoding="utf8")
+text = args.input.read_text(encoding="utf8")
 c = Colorer(text, args.versions_colorspace)
 body = markdown.markdown(c.colored())
 
