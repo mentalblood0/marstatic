@@ -13,20 +13,26 @@ tsid_parser = TsidParser()
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
 class Color:
-    h: float
-    s: float
-    v: float
+    shift: float
+
+    @property
+    def h(self):
+        return self.shift
+
+    @property
+    def s(self):
+        return 0.35
+
+    @property
+    def v(self):
+        return 0.78
 
     def saturated(self, c: float):
-        return dataclasses.replace(self, s=self.s * c)
+        return dataclasses.replace(self, shift=self.shift * c)
 
     @property
     def css(self):
         return "#%02x%02x%02x" % tuple(int(255 * i) for i in colorsys.hsv_to_rgb(self.h, self.s, self.v))
-
-    @classmethod
-    def from_shift(cls, shift: float):
-        return cls(shift, 0.35, 0.78)
 
 
 def fundamental_roots(o: T | T.Ans | T.V | T.C | T.r | T.A | T.N):
@@ -84,9 +90,9 @@ class Colorspace:
 
     def color(self, o: T.R | T.A):
         if isinstance(o, T.R):
-            return Color.from_shift(self.number_by_value[o.value] / len(self))
+            return Color(self.number_by_value[o.value] / len(self))
         if isinstance(o, T.A):
-            return Color.from_shift(self.number_by_value[o.root.value] / len(self))
+            return Color(self.number_by_value[o.root.value] / len(self))
 
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
@@ -104,7 +110,7 @@ class VersionColorspace:
         return {r.value: i for i, r in enumerate(sorted(self.members, key=lambda r: r.value))}
 
     def color(self, o: T.V):
-        return Color.from_shift(self.number_by_value[o.value[-1].value] / len(self))
+        return Color(self.number_by_value[o.value[-1].value] / len(self))
 
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
@@ -155,11 +161,22 @@ class Colorer:
         ONE = "one"
         SHARED = "shared"
 
-    tsid_heuristic = re.compile(r"\*\*([^А-Яа-я]+?)\*\*:?")
+    default_tsid_heuristic = re.compile(r"\*\*([^А-Яа-я]+?)\*\*:?")
 
-    lines: list[str] = dataclasses.field(repr=False, hash=False)
-    tsids: set[Tsid] = dataclasses.field(hash=False)
+    text: str
     versions_colorspace_mode: VersionsColorspaceMode
+    tsid_heuristic: re.Pattern[str] = default_tsid_heuristic
+
+    @functools.cached_property
+    def lines(self):
+        return self.text.splitlines()
+
+    @functools.cached_property
+    def tsids(self):
+        return {
+            Tsid(m.group(1))
+            for m in itertools.chain.from_iterable(re.finditer(self.tsid_heuristic, l) for l in self.lines)
+        }
 
     @functools.cached_property
     def fundamental_roots(self):
@@ -259,16 +276,3 @@ class Colorer:
                 result += self.colored(a)
 
         return self.flatten(result)
-
-    @classmethod
-    def from_text(cls, text: str, *args, **kwargs):
-        lines = text.splitlines()
-        return cls(
-            lines,
-            {
-                Tsid(m.group(1))
-                for m in itertools.chain.from_iterable(re.finditer(cls.tsid_heuristic, l) for l in lines)
-            },
-            *args,
-            **kwargs,
-        )
