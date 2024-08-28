@@ -30,11 +30,11 @@ class Color:
 
     @classmethod
     def from_value(cls, value: str):
-        digest = hashlib.blake2b(value.encode(), digest_size=6, salt=cls.salt).digest()
+        digest = hashlib.blake2b(value.encode(), digest_size=4, salt=cls.salt).digest()
         return cls(
             int.from_bytes(digest[:2]) / 2**16,
-            cls.s_limits[0] + int.from_bytes(digest[2:4]) / 2**16 * (cls.s_limits[1] - cls.s_limits[0]),
-            cls.v_limits[0] + int.from_bytes(digest[4:]) / 2**16 * (cls.v_limits[1] - cls.v_limits[0]),
+            cls.s_limits[0] + int.from_bytes([digest[2]]) / 2**8 * (cls.s_limits[1] - cls.s_limits[0]),
+            cls.v_limits[0] + int.from_bytes([digest[3]]) / 2**8 * (cls.v_limits[1] - cls.v_limits[0]),
         )
 
 

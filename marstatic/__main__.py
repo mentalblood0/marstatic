@@ -11,10 +11,10 @@ parser = argparse.ArgumentParser(prog="marstatic", description="Convert markdown
 parser.add_argument("input", type=pathlib.Path)
 parser.add_argument("-o", "--output", type=pathlib.Path, required=False)
 parser.add_argument("-t", "--title", type=str, required=False, default="notes")
-parser.add_argument("-s", "--salt", type=str, required=False, default="al")
+parser.add_argument("-s", "--salt", type=str, required=False, default="b")
 parser.add_argument("-si", "--saturation_min", type=float, required=False, default=0.25)
 parser.add_argument("-sa", "--saturation_max", type=float, required=False, default=0.7)
-parser.add_argument("-vi", "--value_min", type=float, required=False, default=0.65)
+parser.add_argument("-vi", "--value_min", type=float, required=False, default=0.60)
 parser.add_argument("-va", "--value_max", type=float, required=False, default=0.95)
 
 args = parser.parse_args()
