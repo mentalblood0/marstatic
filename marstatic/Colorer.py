@@ -35,6 +35,10 @@ class Color:
     def css(self):
         return "#%02x%02x%02x" % tuple(int(255 * i) for i in colorsys.hsv_to_rgb(self.h, self.s, self.v))
 
+    @classmethod
+    def from_number(cls, number: int, total: int):
+        return cls(number / total)
+
 
 @functools.cache
 def fundamental_roots(o: T | T.Ans | T.V | T.C | T.r | T.A | T.N):
@@ -92,9 +96,9 @@ class Colorspace:
 
     def color(self, o: T.R | T.A):
         if isinstance(o, T.R):
-            return Color(self.number_by_value[o.value] / len(self))
+            return Color.from_number(self.number_by_value[o.value], len(self))
         if isinstance(o, T.A):
-            return Color(self.number_by_value[o.root.value] / len(self))
+            return Color.from_number(self.number_by_value[o.root.value], len(self))
 
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
@@ -112,7 +116,7 @@ class VersionColorspace:
         return {r.value: i for i, r in enumerate(sorted(self.members, key=lambda r: r.value))}
 
     def color(self, o: T.V):
-        return Color(self.number_by_value[o.value[-1].value] / len(self))
+        return Color.from_number(self.number_by_value[o.value[-1].value], len(self))
 
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
