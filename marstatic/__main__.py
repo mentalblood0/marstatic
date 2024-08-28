@@ -26,7 +26,7 @@ c = Colorer(text, args.versions_colorspace)
 body = markdown.markdown(c.colored())
 
 templates = {p.stem: ruiner.Template(p.read_text()) for p in (pathlib.Path(__file__).parent / "templates").iterdir()}
-parameters: ruiner.TemplateParameters = {"header": str(args.header), "body": body, "Color": c.css}
+parameters = {"header": str(args.header), "body": body, "Color": c.css}
 
-result = templates["Page"].rendered(parameters, templates=templates)
+result = templates["Page"].rendered(parameters, templates)
 args.output.write_text(result, encoding="utf8")

@@ -14,6 +14,7 @@ tsid_parser = TsidParser()
 @dataclasses.dataclass(frozen=True, kw_only=False)
 class Color:
     shift: float
+    saturation: float = 0.35
 
     @property
     def h(self):
@@ -21,20 +22,21 @@ class Color:
 
     @property
     def s(self):
-        return 0.35
+        return self.saturation
 
     @property
     def v(self):
         return 0.78
 
     def saturated(self, c: float):
-        return dataclasses.replace(self, shift=self.shift * c)
+        return dataclasses.replace(self, saturation=self.saturation * c)
 
     @property
     def css(self):
         return "#%02x%02x%02x" % tuple(int(255 * i) for i in colorsys.hsv_to_rgb(self.h, self.s, self.v))
 
 
+@functools.cache
 def fundamental_roots(o: T | T.Ans | T.V | T.C | T.r | T.A | T.N):
     if isinstance(o, T):
         return fundamental_roots(o.value)
