@@ -1,5 +1,6 @@
 import argparse
 import pathlib
+import sys
 
 import markdown
 import ruiner
@@ -9,7 +10,6 @@ from .Colorer import Color, Colorer
 parser = argparse.ArgumentParser(prog="marstatic", description="Convert markdown to HTML")
 
 parser.add_argument("input", type=pathlib.Path)
-parser.add_argument("-o", "--output", type=pathlib.Path, required=False)
 parser.add_argument("-t", "--title", type=str, required=False, default="notes")
 parser.add_argument("-s", "--salt", type=str, required=False, default="w")
 parser.add_argument("-si", "--saturation_min", type=float, required=False, default=0.25)
@@ -31,4 +31,4 @@ templates = {p.stem: ruiner.Template(p.read_text()) for p in (pathlib.Path(__fil
 parameters = {"title": str(args.title), "body": body, "Color": c.css}
 
 result = templates["Page"].rendered(parameters, templates)
-(args.output or args.input.with_suffix(".html")).write_text(result, encoding="utf8")
+sys.stdout.write(result)
