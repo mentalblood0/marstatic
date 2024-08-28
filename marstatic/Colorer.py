@@ -1,3 +1,4 @@
+import base64
 import colorsys
 import dataclasses
 import functools
@@ -94,10 +95,8 @@ class Colorer:
     @functools.cached_property
     def tsids(self):
         return {
-            m.group(1): f"i{i}"
-            for i, m in enumerate(
-                itertools.chain.from_iterable(re.finditer(self.tsid_heuristic, l) for l in self.lines)
-            )
+            m.group(1): "i" + base64.b64encode(m.group(1).encode()).decode("ascii").rstrip("=")
+            for m in itertools.chain.from_iterable(re.finditer(self.tsid_heuristic, l) for l in self.lines)
         }
 
     def color(self, o: T.A | T.R | T.V):
