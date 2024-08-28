@@ -14,7 +14,7 @@ tsid_parser = TsidParser()
 @dataclasses.dataclass(frozen=True, kw_only=False)
 class Color:
     shift: float
-    saturation: float = 0.35
+    saturation: float = 0.4
 
     @property
     def h(self):
@@ -36,8 +36,14 @@ class Color:
         return "#%02x%02x%02x" % tuple(int(255 * i) for i in colorsys.hsv_to_rgb(self.h, self.s, self.v))
 
     @classmethod
-    def from_number(cls, number: int, total: int):
-        return cls(number / total)
+    @functools.cache
+    def from_number(cls, number: int):
+        result = 0
+        d = 0.5
+        for b in bin(number + 1).split("b")[1]:
+            result += (1 if b == "1" else -1) * d
+            d /= 2
+        return cls(result)
 
 
 @functools.cache
@@ -87,18 +93,15 @@ class Tsid:
 class Colorspace:
     members: set[T.R]
 
-    def __len__(self):
-        return len(self.members)
-
     @functools.cached_property
     def number_by_value(self):
         return {r.value: i for i, r in enumerate(sorted(self.members, key=lambda r: r.value))}
 
     def color(self, o: T.R | T.A):
         if isinstance(o, T.R):
-            return Color.from_number(self.number_by_value[o.value], len(self))
+            return Color.from_number(self.number_by_value[o.value])
         if isinstance(o, T.A):
-            return Color.from_number(self.number_by_value[o.root.value], len(self))
+            return Color.from_number(self.number_by_value[o.root.value])
 
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
@@ -108,15 +111,12 @@ class VersionColorspace:
     first: First
     members: set[T.V.Other]
 
-    def __len__(self):
-        return len(self.members)
-
     @functools.cached_property
     def number_by_value(self):
         return {r.value: i for i, r in enumerate(sorted(self.members, key=lambda r: r.value))}
 
     def color(self, o: T.V):
-        return Color.from_number(self.number_by_value[o.value[-1].value], len(self))
+        return Color.from_number(self.number_by_value[o.value[-1].value])
 
 
 @dataclasses.dataclass(frozen=True, kw_only=False)
