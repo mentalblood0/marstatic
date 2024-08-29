@@ -1,4 +1,5 @@
 import argparse
+import encodings
 import pathlib
 import sys
 
@@ -9,6 +10,9 @@ from .Colorer import Color, Colorer
 
 parser = argparse.ArgumentParser(prog="marstatic", description="Convert markdown to HTML")
 
+parser.add_argument(
+    "-e", "--encoding", type=str, required=False, choices=[*encodings.aliases.aliases.keys()], default="utf8"
+)
 parser.add_argument("-t", "--title", type=str, required=False, default="notes")
 parser.add_argument("-s", "--salt", type=str, required=False, default="w")
 parser.add_argument("-si", "--saturation_min", type=float, required=False, default=0.25)
@@ -22,7 +26,7 @@ Color.salt = args.salt.encode()
 Color.s_limits = (args.saturation_min, args.saturation_max)
 Color.v_limits = (args.value_min, args.value_max)
 
-text = sys.stdin.read()
+text = sys.stdin.buffer.read().decode(args.encoding)
 c = Colorer(text)
 body = markdown.markdown(c.colored())
 
